@@ -4,5 +4,6 @@ qr_codes
 *.db
 *.sqlite
 .vscode
+.env
 
 

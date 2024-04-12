@@ -7,6 +7,10 @@ services:
       POSTGRES_DB: myappdb
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d myappdb"]
       interval: 10s
@@ -20,11 +24,10 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: adminpassword
-      PGADMIN_LISTEN_PORT: 80
+    ports:
+      - "5050:80"
     depends_on:
       - postgres
-    ports:
-      - "5050:80" # Expose PgAdmin on port 5050 of the host
     volumes:
       - pgadmin-data:/var/lib/pgadmin
     networks:
@@ -33,15 +36,16 @@ services:
   fastapi:
     build: .
     volumes:
-      - ./qr_codes:/myapp/qr_codes # Maps ./qr_codes from your host to /myapp/qr_codes in the container
+      - ./qr_codes:/myapp/qr_codes
       - ./:/myapp/
     environment:
-      - QR_CODE_DIR=./qr_codes
-      - FILL_COLOR=red
-      - BACK_COLOR=white
+      QR_CODE_DIR: /myapp/qr_codes
+      FILL_COLOR: red
+      BACK_COLOR: white
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
+    ports:
+      - "8000:80"
     networks:
       - app-network
 
@@ -50,15 +54,64 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
       - fastapi
+    networks:
+      - app-network
+
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    ports:
+      - "2181:2181"
+    networks:
+      - app-network
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9092,OUTSIDE://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_LISTENERS: INSIDE://0.0.0.0:9092,OUTSIDE://0.0.0.0:9094
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "9094:9094"
+    depends_on:
+      - zookeeper
+    networks:
+      - app-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus:/etc/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
     networks:
       - app-network
 
 volumes:
   postgres-data:
   pgadmin-data:
+  grafana-data:
 
 networks:
   app-network:
+    driver: bridge

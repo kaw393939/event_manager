@@ -1,22 +1,20 @@
 from fastapi import FastAPI
-from app.database import initialize_async_db
-from app.dependencies import get_settings
-from app.routers import oauth, user_routes
-from app.utils.common import setup_logging
+import logging
 
-# This function sets up logging based on the configuration specified in your logging configuration file.
+# Import your simplified DiscordKafkaService here
+from app.services.gutenberg_service import SimpleDiscordKafkaService
+from app.dependencies import get_settings
+from app.utils.common import setup_logging
+from app.routers import oauth, user_routes
+
+# Initialize settings and setup logging
+settings = get_settings()
 setup_logging()
 
-# Retrieve settings
-settings = get_settings()
-
-# Create an instance of the FastAPI application.
 app = FastAPI(
     title="Event Management",
-    description="A FastAPI application for creating, listing available codes, and deleting QR codes. "
-                "It also supports OAuth for secure access.",
+    description="A FastAPI application for event management and integration with Discord.",
     version="0.0.1",
-    redoc_url=None,
     contact={
         "name": "API Support",
         "url": "http://www.example.com/support",
@@ -25,13 +23,30 @@ app = FastAPI(
     license_info={
         "name": "Apache 2.0",
         "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
-    }
+    },
 )
-settings = get_settings()
+
+# Create the Discord service instance globally
+service = SimpleDiscordKafkaService(
+    token=settings.discord_bot_token,
+    channel_id=settings.discord_channel_id,
+    openai_key=settings.openai_api_key
+)
+
 @app.on_event("startup")
-def startup_event():
-    initialize_async_db(settings.database_url)
-# Include the routers for your application.
-app.include_router(oauth.router)  # OAuth authentication routes
-# app.include_router(events.router)
+async def start_service():
+    logging.info("Starting DiscordKafkaService...")
+    await service.start()
+    logging.info("DiscordKafkaService started successfully")
+
+@app.on_event("shutdown")
+async def stop_service():
+    logging.info("Stopping DiscordKafkaService...")
+    await service.stop()
+    logging.info("DiscordKafkaService stopped successfully")
+
+# Include routers
+app.include_router(oauth.router)
 app.include_router(user_routes.router)
+
+logging.info("FastAPI application setup completed")
