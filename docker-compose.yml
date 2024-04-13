@@ -36,18 +36,13 @@ services:
   fastapi:
     build: .
     volumes:
-      - ./qr_codes:/myapp/qr_codes
-      - ./:/myapp/
-    environment:
-      QR_CODE_DIR: /myapp/qr_codes
-      FILL_COLOR: red
-      BACK_COLOR: white
+      - ./:/myapp
     depends_on:
       - postgres
-    ports:
-      - "8000:80"
     networks:
       - app-network
+    ports:
+      - "8000:8000"
 
   nginx:
     image: nginx:latest
@@ -55,6 +50,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
     depends_on:
       - fastapi
     networks:
@@ -87,7 +83,6 @@ services:
 volumes:
   postgres-data:
   pgadmin-data:
-  grafana-data:
 
 networks:
   app-network:
