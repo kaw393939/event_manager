@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from fastapi import FastAPI
 from app.dependencies import get_settings
@@ -17,20 +18,22 @@ app = FastAPI(
 app.include_router(oauth.router)
 app.include_router(user_routes.router)
 
-discord_kafka_service = SimpleDiscordKafkaService(
+
+
+
+service = SimpleDiscordKafkaService(
     token=settings.discord_bot_token,
     channel_id=settings.discord_channel_id,
     openai_key=settings.openai_api_key
 )
-
 @app.on_event("startup")
 async def start_services():
     logging.info("Starting application services")
-    await discord_kafka_service.start()
+    await service.start()
 
 @app.on_event("shutdown")
-async def stop_services():
-    logging.info("Stopping application services")
-    await discord_kafka_service.stop()
+async def shutdown_services():
+    logging.info("Shutting down application services")
+    await service.stop()
 
 logging.info("FastAPI application setup completed")
