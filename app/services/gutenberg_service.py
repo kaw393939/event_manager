@@ -95,7 +95,7 @@ class SimpleDiscordKafkaService:
         chain = prompt | self.chat_api | output_parser
 
         try:
-            response = chain.invoke({"input": user_input})  # Ensure await is correctly used here
+            response = await chain.ainvoke({"input": user_input})  # Ensure await is correctly used here
             return f"Roman History Teacher: {response}"
         except Exception as e:
             logger.error(f"Failed to generate response: {e}")
