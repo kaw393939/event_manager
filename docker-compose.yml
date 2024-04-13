@@ -84,29 +84,6 @@ services:
     networks:
       - app-network
 
-  prometheus:
-    image: prom/prometheus:latest
-    volumes:
-      - ./prometheus:/etc/prometheus
-    ports:
-      - "9090:9090"
-    networks:
-      - app-network
-
-  grafana:
-    image: grafana/grafana:latest
-    volumes:
-      - grafana-data:/var/lib/grafana
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
-    depends_on:
-      - prometheus
-    ports:
-      - "3000:3000"
-    networks:
-      - app-network
-
 volumes:
   postgres-data:
   pgadmin-data:
