@@ -70,7 +70,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: whua0/event_manager_pratice:${{ github.sha }} # Uses the Git SHA for tagging
+          tags: whua0/event_manager_practice:${{ github.sha }} # Uses the Git SHA for tagging
           platforms: linux/amd64,linux/arm64 # Multi-platform support
           cache-from: type=registry,ref=whua0/event_manager_practice:cache
           cache-to: type=inline,mode=max
