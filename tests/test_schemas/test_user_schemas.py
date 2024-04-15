@@ -86,3 +86,17 @@ def test_user_base_username_invalid(username, user_base_data):
     user_base_data["username"] = username
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
+
+# Test for issue 1 - URL Mismatch
+def test_user_base_example_profile_picture_url():
+    # Retrieve the example data from the UserBase model's Config
+    example_data = UserBase.Config.json_schema_extra['example']
+    
+    # Construct a user object using the full example data
+    # This will trigger the validation rules for all fields
+    try:
+        user = UserBase(**example_data)
+        assert user.profile_picture_url == example_data['profile_picture_url']
+        print("Example profile picture URL and all other fields are valid.")
+    except ValidationError as e:
+        pytest.fail(f"Validation failed: {e}")
