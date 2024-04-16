@@ -133,7 +133,7 @@ def test_user_base_full_name_valid(full_name, user_base_data):
     assert user.full_name == full_name
 
 @pytest.mark.parametrize("full_name", ["verylongfullname" * 7, "1InvalidName1", "Invalid_Full_Name", "$Invalid$Full$Name"])
-def test_user_base_full_name_invalid_length(full_name, user_base_data):
+def test_user_base_full_name_invalid(full_name, user_base_data):
     user_base_data["full_name"] = full_name
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
