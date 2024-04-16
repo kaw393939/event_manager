@@ -109,7 +109,7 @@ async def delete_user(user_id: UUID, db: AsyncSession = Depends(get_async_db), t
 
 
 
-@router.post("/users/", response_model=UserResponse, status_code=status.HTTP_201_CREATED, tags=["User Management"], name="create_user")
+@router.post("/users/", response_model=UserResponse, status_code=status.HTTP_200_OK, tags=["User Management"], name="create_user")
 async def create_user(user: UserCreate, request: Request, db: AsyncSession = Depends(get_async_db), token: str = Depends(oauth2_scheme)):
     """
     Create a new user.
