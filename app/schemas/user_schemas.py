@@ -56,6 +56,7 @@ class UserBase(BaseModel):
     )
     email: EmailStr = Field(
         ...,
+        max_length=255,
         description="The email address of the user.",
         example="john.doe@example.com"
     )

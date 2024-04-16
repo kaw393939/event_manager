@@ -87,6 +87,12 @@ def test_user_base_username_invalid(username, user_base_data):
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
 
+@pytest.mark.parametrize("email", ["", "invalidemail", "invalid@email", "invalid.email", "verylongemail" * 20 ])
+def test_user_base_email_invalid(email, user_base_data):
+    user_base_data["email"] = email
+    with pytest.raises(ValidationError):
+        UserBase(**user_base_data)
+
 # Tests for password validation
 def test_password_too_short(user_create_data):
     with pytest.raises(ValueError, match="Password must be at least 8 characters long."):
