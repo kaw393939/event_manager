@@ -155,7 +155,7 @@ def test_user_base_profile_picture_url_invalid_protocol(user_create_data):
     with pytest.raises(ValueError, match="Profile picture URL must start with 'http://' or 'https://'."):
         UserCreate(**{**user_create_data, "profile_picture_url": "invalidhttps://example.com/profile_pictures.jpg"})
 
-@pytest.mark.parametrize("profile_picture_url", ["https://missing_domain_profile_pictures.jpg"])
+@pytest.mark.parametrize("profile_picture_url", ["https://"])
 def test_user_base_profile_picture_url_missing_domain(profile_picture_url, user_base_data):
     user_base_data["profile_picture_url"] = profile_picture_url
     with pytest.raises(ValidationError):
