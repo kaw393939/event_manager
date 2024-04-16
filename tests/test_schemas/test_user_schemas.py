@@ -137,3 +137,38 @@ def test_user_base_full_name_invalid(full_name, user_base_data):
     user_base_data["full_name"] = full_name
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
+
+# Parametrized tests for profile_picture_url validation
+@pytest.mark.parametrize("profile_picture_url", ["https://example.com/profile_pictures.jpg", "http://example.com/profile_pictures.jpg", "http://example.com/profile_pictures.jpeg", "http://example.com/profile_pictures.png"])
+def test_user_base_profile_picture_url_valid(profile_picture_url, user_base_data):
+    user_base_data["profile_picture_url"] = profile_picture_url
+    user = UserBase(**user_base_data)
+    assert user.profile_picture_url == profile_picture_url
+
+@pytest.mark.parametrize("profile_picture_url", ["https://" + "example.com/" + "a" * 2083 + ".jpg"])
+def test_user_base_profile_picture_url_too_long(profile_picture_url, user_base_data):
+    user_base_data["profile_picture_url"] = profile_picture_url
+    with pytest.raises(ValidationError):
+        UserBase(**user_base_data)
+
+def test_user_base_profile_picture_url_invalid_protocol(user_create_data):
+    with pytest.raises(ValueError, match="Profile picture URL must start with 'http://' or 'https://'."):
+        UserCreate(**{**user_create_data, "profile_picture_url": "invalidhttps://example.com/profile_pictures.jpg"})
+
+@pytest.mark.parametrize("profile_picture_url", ["https://missing_domain_profile_pictures.jpg"])
+def test_user_base_profile_picture_url_missing_domain(profile_picture_url, user_base_data):
+    user_base_data["profile_picture_url"] = profile_picture_url
+    with pytest.raises(ValidationError):
+        UserBase(**user_base_data)
+
+@pytest.mark.parametrize("profile_picture_url", ["https://invalid_domain..com/profile_pictures.jpg"])
+def test_user_base_profile_picture_url_invalid_domain(profile_picture_url, user_base_data):
+    user_base_data["profile_picture_url"] = profile_picture_url
+    with pytest.raises(ValidationError):
+        UserBase(**user_base_data)
+
+@pytest.mark.parametrize("profile_picture_url", ["https://example.com/profile_pictures"])
+def test_user_base_profile_picture_url_invalid_image_file(profile_picture_url, user_base_data):
+    user_base_data["profile_picture_url"] = profile_picture_url
+    with pytest.raises(ValidationError):
+        UserBase(**user_base_data)
