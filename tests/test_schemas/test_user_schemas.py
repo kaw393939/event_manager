@@ -124,3 +124,16 @@ def test_password_with_space(user_create_data):
 
 def test_valid_password(user_create_data):
     assert UserCreate(**user_create_data).password == user_create_data["password"]
+
+# Parametrized tests for full_name validation
+@pytest.mark.parametrize("full_name", ["", "ValidFullName", "Valid Full Name", "Valid-Full-Name", "Valid'Full'Name"])
+def test_user_base_full_name_valid(full_name, user_base_data):
+    user_base_data["full_name"] = full_name
+    user = UserBase(**user_base_data)
+    assert user.full_name == full_name
+
+@pytest.mark.parametrize("full_name", ["verylongfullname" * 7, "1InvalidName1", "Invalid_Full_Name", "$Invalid$Full$Name"])
+def test_user_base_full_name_invalid_length(full_name, user_base_data):
+    user_base_data["full_name"] = full_name
+    with pytest.raises(ValidationError):
+        UserBase(**user_base_data)
