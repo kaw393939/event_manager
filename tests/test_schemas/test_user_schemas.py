@@ -86,3 +86,35 @@ def test_user_base_username_invalid(username, user_base_data):
     user_base_data["username"] = username
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
+
+# Tests for password validation
+def test_password_too_short(user_create_data):
+    with pytest.raises(ValueError, match="Password must be at least 8 characters long."):
+        UserCreate(**{**user_create_data, "password": "Short1!"})
+
+def test_password_too_long(user_create_data):
+    with pytest.raises(ValueError, match="Password must be less than 128 characters long."):
+        UserCreate(**{**user_create_data, "password": "ThisIsAVeryLongPasswordThatExceeds128Characters!" * 3})
+
+def test_password_no_uppercase(user_create_data):
+    with pytest.raises(ValueError, match="Password must contain at least one uppercase letter."):
+        UserCreate(**{**user_create_data, "password": "nouppercase123!"})
+
+def test_password_no_lowercase(user_create_data):
+    with pytest.raises(ValueError, match="Password must contain at least one lowercase letter."):
+        UserCreate(**{**user_create_data, "password": "NOLOWERCASE123!"})
+
+def test_password_no_digit(user_create_data):
+    with pytest.raises(ValueError, match="Password must contain at least one digit."):
+        UserCreate(**{**user_create_data, "password": "NoDigitPassword!"})
+
+def test_password_no_special_character(user_create_data):
+    with pytest.raises(ValueError, match="Password must contain at least one special character."):
+        UserCreate(**{**user_create_data, "password": "NoSpecialCharacter123"})
+
+def test_password_with_space(user_create_data):
+    with pytest.raises(ValueError, match="Password must not contain spaces."):
+        UserCreate(**{**user_create_data, "password": "Space Password123!"})
+
+def test_valid_password(user_create_data):
+    assert UserCreate(**user_create_data).password == user_create_data["password"]
