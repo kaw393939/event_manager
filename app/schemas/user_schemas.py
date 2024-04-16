@@ -74,6 +74,7 @@ class UserBase(BaseModel):
     )
     profile_picture_url: Optional[str] = Field(
         None,
+        max_length=2083,
         description="The URL to the user's profile picture. Must point to a valid image file (e.g., JPEG, PNG).",
         example="https://example.com/profile_pictures/john_doe.jpg"
     )
@@ -96,8 +97,15 @@ class UserBase(BaseModel):
         if v is None:
             return v  # If the URL is optional, allow None values
         parsed_url = urlparse(v)
+        if not parsed_url.scheme or parsed_url.scheme not in ['http', 'https']:
+            raise ValueError("Profile picture URL must start with 'http://' or 'https://'.")
+        if not parsed_url.netloc:
+            raise ValueError("Profile picture URL is missing the domain name.")
+        domain_pattern = r'^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.[a-zA-Z]{2,}$'
+        if not re.match(domain_pattern, parsed_url.netloc):
+            raise ValueError("Profile Picture URL must have a valid domain name.")
         if not re.search(r"\.(jpg|jpeg|png)$", parsed_url.path):
-            raise ValueError("Profile picture URL must point to a valid image file (JPEG, PNG).")
+            raise ValueError("Profile Picture URL must point to a valid image file (JPEG, PNG).")
         return v
 
     class Config:
@@ -180,8 +188,15 @@ class UserUpdate(BaseModel):
     def validate_profile_picture_url(cls, v):
         if v is not None:
             parsed_url = urlparse(str(v))  # Convert the URL object to a string before parsing
+            if not parsed_url.scheme or parsed_url.scheme not in ['http', 'https']:
+                raise ValueError("Profile picture URL must start with 'http://' or 'https://'.")
+            if not parsed_url.netloc:
+                raise ValueError("Profile picture URL is missing the domain name.")
+            domain_pattern = r'^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.[a-zA-Z]{2,}$'
+            if not re.match(domain_pattern, parsed_url.netloc):
+                raise ValueError("Profile Picture URL must have a valid domain name.")
             if not re.search(r"\.(jpg|jpeg|png)$", parsed_url.path):
-                raise ValueError("Profile picture URL must point to a valid image file (JPEG, PNG).")
+                raise ValueError("Profile Picture URL must point to a valid image file (JPEG, PNG).")
         return v
 
     class Config:
