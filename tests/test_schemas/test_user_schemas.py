@@ -1,4 +1,5 @@
 import pytest
+import uuid
 from pydantic import ValidationError
 from datetime import datetime
 from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest
@@ -218,3 +219,20 @@ def test_user_update_profile_picture_url_invalid_image_file(profile_picture_url,
     user_update_data["profile_picture_url"] = profile_picture_url
     with pytest.raises(ValidationError):
         UserUpdate(**user_update_data)
+
+# Tests for Custom validator to convert UUID to string
+def test_convert_uuid_to_string():
+
+    valid_uuid = uuid.uuid4()
+    converted_uuid = UserResponse.convert_uuid_to_string(valid_uuid)
+    assert isinstance(converted_uuid, str)
+    assert str(valid_uuid) == converted_uuid
+
+    invalid_uuid_string = "not_a_uuid"
+    converted_uuid_string = UserResponse.convert_uuid_to_string(invalid_uuid_string)
+    assert isinstance(converted_uuid_string, str)
+    assert invalid_uuid_string == converted_uuid_string
+
+    invalid_data = 12345
+    converted_invalid_data = UserResponse.convert_uuid_to_string(invalid_data)
+    assert invalid_data == converted_invalid_data
