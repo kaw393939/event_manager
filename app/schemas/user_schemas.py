@@ -115,7 +115,7 @@ class UserBase(BaseModel):
                 "username": "john_doe_123",
                 "email": "john.doe@example.com",
                 "full_name": "John Doe",
-                "bio": "I am a software engineer with over 5 years of experience in building scalable web applications using Python and JavaScript.",
+                "bio": "I am a data scientist passionate about machine learning and big data analytics.",
                 "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
             }
         }
