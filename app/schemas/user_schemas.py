@@ -170,7 +170,7 @@ class UserUpdate(BaseModel):
         None,
         max_length=100,
         description="An updated full name for the user.",
-        example="John H. Doe"
+        example="John Update Doe"
     )
     bio: Optional[str] = Field(
         None,
@@ -183,6 +183,12 @@ class UserUpdate(BaseModel):
         description="An updated URL to the user's profile picture.",
         example="https://example.com/profile_pictures/john_doe_updated.jpg"
     )
+
+    @validator('full_name')
+    def validate_full_name(cls, v):
+        if v and not re.match(r"^[a-zA-Z\s'-]+$", v):
+            raise ValueError("Full name can only contain letters, spaces, hyphens, or apostrophes.")
+        return v
 
     @validator('profile_picture_url', pre=True, always=True)
     def validate_profile_picture_url(cls, v):
@@ -204,7 +210,7 @@ class UserUpdate(BaseModel):
             "description": "Model for updating user information.",
             "example": {
                 "email": "john.doe.new@example.com",
-                "full_name": "John H. Doe",
+                "full_name": "John Update Doe",
                 "bio": "I am a senior software engineer specializing in backend development with Python and Node.js.",
                 "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
             }
