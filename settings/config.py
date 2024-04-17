@@ -1,6 +1,6 @@
 from pathlib import Path
 from pydantic import  Field, AnyUrl, DirectoryPath
-from pydantic_settings import BasedoSettings
+from pydantic_settings import BaseSettings
 
 
 
