@@ -27,6 +27,18 @@ async def test_create_user_with_invalid_data(db_session):
     user = await UserService.create(db_session, user_data)
     assert user is None
 
+# Test for creating a user with username already exists
+async def test_create_user_with_duplicate_username(db_session):
+    user_data = {
+        "username": "valid_user",
+        "email": "valid_user@example.com",
+        "password": "ValidPassword123!",
+    }
+    user = await UserService.create(db_session, user_data)
+    assert user is not None
+    user = await UserService.create(db_session, user_data)
+    assert user is None
+
 # Test for fetching a user by ID when the user exists
 async def test_get_by_id_user_exists(db_session, user):
     retrieved_user = await UserService.get_by_id(db_session, user.id)
