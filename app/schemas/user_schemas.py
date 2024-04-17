@@ -97,7 +97,7 @@ class UserBase(BaseModel):
         parsed_url = urlparse(v)
         if not re.search(r"\.(jpg|jpeg|png)$", parsed_url.path):
             raise ValueError("Profile picture URL must point to a valid image file (JPEG, PNG).")
-        return v
+        return v 
 
     class Config:
         json_schema_extra = {
@@ -143,7 +143,7 @@ class UserCreate(UserBase):
                 "password": "SecurePassword123!",
                 "full_name": "John Doe",
                 "bio": "I am a data scientist passionate about machine learning and big data analytics.",
-                "profile_picture_url": "https://example.com/profile_pictures/jane_smith.jpg"
+                "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
             }
         }
 
