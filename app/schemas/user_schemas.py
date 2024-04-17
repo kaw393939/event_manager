@@ -166,7 +166,7 @@ class UserUpdate(BaseModel):
         description="An updated biography or description of the user.",
         example="I am a senior software engineer specializing in backend development with Python and Node.js."
     )
-    profile_picture_url: Optional[HttpUrl] = Field(
+    profile_picture_url: Optional[str] = Field(
         None,
         description="An updated URL to the user's profile picture.",
         example="https://example.com/profile_pictures/john_doe_updated.jpg"
@@ -175,8 +175,8 @@ class UserUpdate(BaseModel):
     @validator('profile_picture_url', pre=True, always=True)
     def validate_profile_picture_url(cls, v):
         if v is not None:
-            parsed_url = urlparse(str(v))  # Convert the URL object to a string before parsing
-            if not re.search(r"\.(jpg|jpeg|png)$", parsed_url.path):
+            v = str(v)
+            if not re.search(r"\.(jpg|jpeg|png)$", v):
                 raise ValueError("Profile picture URL must point to a valid image file (JPEG, PNG).")
         return v
 
