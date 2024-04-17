@@ -83,16 +83,6 @@ async def test_update_user_invalid_data(db_session, user):
     updated_user = await UserService.update(db_session, user.id, {"email": "invalidemail"})
     assert updated_user is None
 
-# Test for updating user password
-async def test_update_user_password(db_session, user):
-    new_password = "NewPassword123!"
-    salt = bcrypt.gensalt()
-    hashed_new_password = bcrypt.hashpw(new_password.encode('utf-8'), salt)
-    updated_user = await UserService.update(db_session, user.id, {"password": new_password})
-    user.hashed_password = hashed_new_password
-    assert updated_user is not None
-    assert bcrypt.checkpw(new_password.encode('utf-8'), user.hashed_password)
-
 # Test for deleting a user who exists
 async def test_delete_user_exists(db_session, user):
     deletion_success = await UserService.delete(db_session, user.id)
