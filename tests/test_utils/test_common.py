@@ -15,7 +15,7 @@ def mock_settings():
 
 @pytest.fixture(scope="function")
 def mock_logging_config():
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG) # pragma: no cover
 
 
 def test_authenticate_user(mock_settings):
