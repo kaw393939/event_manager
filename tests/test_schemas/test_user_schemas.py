@@ -138,6 +138,18 @@ def test_user_base_full_name_invalid(full_name, user_base_data):
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
 
+@pytest.mark.parametrize("full_name", ["", "ValidFullName", "Valid Full Name", "Valid-Full-Name", "Valid'Full'Name"])
+def test_user_update_full_name_valid(full_name, user_update_data):
+    user_update_data["full_name"] = full_name
+    user = UserUpdate(**user_update_data)
+    assert user.full_name == full_name
+
+@pytest.mark.parametrize("full_name", ["verylongfullname" * 7, "1InvalidName1", "Invalid_Full_Name", "$Invalid$Full$Name"])
+def test_user_update_full_name_invalid(full_name, user_update_data):
+    user_update_data["full_name"] = full_name
+    with pytest.raises(ValidationError):
+        UserUpdate(**user_update_data)
+
 # Parametrized tests for profile_picture_url validation
 @pytest.mark.parametrize("profile_picture_url", ["https://example.com/profile_pictures.jpg", "http://example.com/profile_pictures.jpg", "http://example.com/profile_pictures.jpeg", "http://example.com/profile_pictures.png"])
 def test_user_base_profile_picture_url_valid(profile_picture_url, user_base_data):
