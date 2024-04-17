@@ -158,6 +158,13 @@ async def create_user(user: UserCreate, request: Request, db: AsyncSession = Dep
 
 @router.get("/users/", response_model=UserListResponse, name="list_users", tags=["User Management"])
 async def list_users(request: Request, skip: int = 0, limit: int = 10, db: AsyncSession = Depends(get_async_db), token: str = Depends(oauth2_scheme)):
+    
+    if skip < 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Skip integer cannot be less than 0")
+    
+    if not limit > 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Limit integer must be more than 1")
+
     total_users = await UserService.count(db)
     users = await UserService.list_users(db, skip=skip, limit=limit)
 
