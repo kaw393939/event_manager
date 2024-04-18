@@ -36,14 +36,14 @@ Data Serialization and Deserialization: Pydantic handles the secure conversion o
 Overall, the use of Pydantic models in this file contributes to building a secure, validated, and well-documented API for user-related operations in a FastAPI application. The combination of type annotations, regex-based validators, and inheritance promotes code reusability, maintainability, and adherence to security best practices.
 """
 # Import required libraries and modules
-from datetime import datetime, timezone  # Provides classes for manipulating dates and times in both simple and complex ways.
-from urllib.parse import urlparse  # Functions for breaking down and reconstructing URLs.
-from pydantic import BaseModel, EmailStr, Field, HttpUrl, validator  # Pydantic is used for data validation and settings management using Python type annotations.
-from typing import List, Optional  # Standard library typing module, used for constructing complex type hints.
-from app.schemas.link_schema import Link  # Custom module, likely provides a schema for links (part of HATEOAS).
-from app.schemas.pagination_schema import EnhancedPagination  # Custom pagination schema supporting enriched functionality.
 import re  # Provides regular expression matching operations.
 import uuid  # Provides immutable UUID objects and functions for generating new UUIDs.
+from datetime import datetime  # Provides classes for manipulating dates and times in both simple and complex ways.
+from urllib.parse import urlparse  # Functions for breaking down and reconstructing URLs.
+from typing import List, Optional  # Standard library typing module, used for constructing complex type hints.
+from pydantic import BaseModel, EmailStr, Field, HttpUrl, validator  # Pydantic is used for data validation and settings management using Python type annotations.
+from app.schemas.link_schema import Link  # Custom module, likely provides a schema for links (part of HATEOAS).
+from app.schemas.pagination_schema import EnhancedPagination  # Custom pagination schema supporting enriched functionality.
 
 # Define a base user model with common attributes
 class UserBase(BaseModel):
@@ -142,8 +142,8 @@ class UserCreate(UserBase):
                 "email": "john.doe@example.com",
                 "password": "SecurePassword123!",
                 "full_name": "John Doe",
-                "bio": "I am a data scientist passionate about machine learning and big data analytics.",
-                "profile_picture_url": "https://example.com/profile_pictures/jane_smith.jpg"
+                "bio": "I am a software engineer with over 5 years of experience in building scalable web applications using Python and JavaScript.",
+                "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
             }
         }
 
