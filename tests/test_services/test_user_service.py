@@ -1,6 +1,6 @@
 import pytest
 import bcrypt
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from app.dependencies import get_settings
 from app.services.user_service import UserService
 from app.models.user_model import User
@@ -200,3 +200,11 @@ async def test_unlock_user_account(db_session, locked_user):
     await UserService.unlock_user_account(db_session, locked_user.id)
     is_locked = await UserService.is_account_locked(db_session, locked_user.username)
     assert not is_locked, "The account should be unlocked after calling unlock_user_account."
+
+# Test for count the number of users in the database
+async def test_count_users(db_session):
+    mock_count_result = 10
+    mock_execute_result = MagicMock(scalar=MagicMock(return_value=mock_count_result))
+    with patch.object(db_session, "execute", return_value=mock_execute_result):
+        count = await UserService.count(db_session)
+    assert count == mock_count_result
