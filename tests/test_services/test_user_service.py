@@ -201,6 +201,11 @@ async def test_unlock_user_account(db_session, locked_user):
     is_locked = await UserService.is_account_locked(db_session, locked_user.username)
     assert not is_locked, "The account should be unlocked after calling unlock_user_account."
 
+# Test for unlocking a user's account if user is not locked
+async def test_unlock_user_if_user_is_not_locked(db_session, user):
+    result = await UserService.unlock_user_account(db_session, user.id)
+    assert result is False
+
 # Test for count the number of users in the database
 async def test_count_users(db_session):
     mock_count_result = 10
