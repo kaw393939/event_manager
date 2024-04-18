@@ -1,5 +1,6 @@
 import pytest
 import bcrypt
+from unittest.mock import patch
 from app.dependencies import get_settings
 from app.services.user_service import UserService
 from app.models.user_model import User
@@ -186,6 +187,13 @@ async def test_reset_password_locked(db_session, user):
 async def test_verify_email(db_session, user):
     updated_user = await UserService.verify_email(db_session, user.id)
     assert updated_user is True
+
+# Test for verifying a user's email if user does not exist
+async def test_verify_email_if_user_not_exist(db_session, user):
+    with patch('app.services.user_service.UserService.get_by_id') as mock_get_by_id:
+        mock_get_by_id.return_value = None
+        result = await UserService.verify_email(db_session, user.id)
+        assert result is False
 
 # Test for unlocking a user's account
 async def test_unlock_user_account(db_session, locked_user):
