@@ -86,3 +86,35 @@ def test_user_base_username_invalid(username, user_base_data):
     user_base_data["username"] = username
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
+
+
+# New test cases for profile_picture_url validation
+# def test_user_base_profile_picture_url_valid():
+#     # Valid URLs with different image extensions (JPG, JPEG, PNG)
+#     valid_urls = [
+#         "https://example.com/profile_pictures/john.jpg",
+#         "http://example.com/images/user_avatar.jpeg",
+#         "https://cdn.domain.com/profile_pics/jane.png",
+#     ]
+#     for url in valid_urls:
+#         user_data = {"profile_picture_url": url}
+#         user = UserBase(**user_data)
+#         assert user.profile_picture_url == url
+
+# def test_user_base_profile_picture_url_missing_optional():
+#     # Optional field, None is allowed
+#     user_data = {}
+#     user = UserBase(**user_data)
+#     assert user.profile_picture_url is None
+
+def test_user_base_profile_picture_url_invalid_extension():
+    # Invalid URL with unsupported extension (GIF)
+    user_data = {"profile_picture_url": "https://example.com/profile.gif"}
+    with pytest.raises(ValidationError):
+        UserBase(**user_data)
+
+def test_user_base_profile_picture_url_invalid_format():
+    # Invalid URL format (missing protocol)
+    user_data = {"profile_picture_url": "example.com/profile.jpg"}
+    with pytest.raises(ValidationError):
+        UserBase(**user_data)
