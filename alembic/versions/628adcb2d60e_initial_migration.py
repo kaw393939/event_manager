@@ -31,7 +31,7 @@ def upgrade() -> None:
     sa.Column('is_professional', sa.Boolean(), nullable=True, default=False),
     sa.Column('professional_status_updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.Column('profile_picture_url', sa.String(length=255), nullable=True),
-    sa.Column('role', sa.Enum('ADMIN', 'USER', 'PRO', 'ANONYMOUS', name='userrole'), nullable=False),
+    sa.Column('role', sa.Enum('ADMIN', 'USER', 'PRO', name='userrole'), nullable=False),
     sa.Column('role', sa.Enum('ADMIN', 'USER', 'PRO', name='userrole'), nullable=False),
     sa.Column('last_login_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('failed_login_attempts', sa.Integer(), nullable=True),
