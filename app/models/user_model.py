@@ -15,6 +15,7 @@ class UserRole(Enum):
     AUTHENTICATED = "authenticated"
     MANAGER = "manager"
     ADMIN = "admin"
+    USER = 'user'
 
 class User(Base):
     """
@@ -57,7 +58,7 @@ class User(Base):
     full_name: Mapped[str] = Column(String(100), nullable=True)
     bio: Mapped[str] = Column(String(500), nullable=True)
     profile_picture_url: Mapped[str] = Column(String(255), nullable=True)
-    role: Mapped[UserRole] = Column(SQLAlchemyEnum(UserRole), default=UserRole.ANONYMOUS, nullable=False)
+    role: Mapped[UserRole] = Column(SQLAlchemyEnum(UserRole), default=UserRole.USER, nullable=False)
     is_professional: Mapped[bool] = Column(Boolean, default=False)
     professional_status_updated_at: Mapped[datetime] = Column(DateTime(timezone=True), nullable=True)
     last_login_at: Mapped[datetime] = Column(DateTime(timezone=True), nullable=True)
