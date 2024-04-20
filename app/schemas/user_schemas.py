@@ -43,11 +43,14 @@ class UserBase(BaseModel):
         description="A short biography or description of the user.",
         example="I am a software engineer with over 5 years of experience in building scalable web applications using Python and JavaScript."
     )
-    profile_picture_url: Optional[str] = Field(
+    profile_picture_url: Optional[HttpUrl] = Field(
         None,
         description="The URL to the user's profile picture. Must point to a valid image file (e.g., JPEG, PNG).",
         example="https://example.com/profile_pictures/john_doe.jpg"
     )
+
+
+
 
     # Validators are used to validate the data
     @validator('username')
@@ -56,11 +59,13 @@ class UserBase(BaseModel):
             raise ValueError("Username can only contain letters, numbers, underscores, and hyphens.")
         return v
 
+
     @validator('full_name')
     def validate_full_name(cls, v):
         if v and not re.match(r"^[a-zA-Z\s'-]+$", v):
             raise ValueError("Full name can only contain letters, spaces, hyphens, or apostrophes.")
         return v
+
 
     @validator('profile_picture_url', pre=True, always=True)
     def validate_profile_picture_url(cls, v):
@@ -70,6 +75,7 @@ class UserBase(BaseModel):
         if not re.search(r"\.(jpg|jpeg|png)$", parsed_url.path):
             raise ValueError("Profile picture URL must point to a valid image file (JPEG, PNG).")
         return v
+
 
     class Config:
         json_schema_extra = {
@@ -83,6 +89,7 @@ class UserBase(BaseModel):
             }
         }
 
+
 # Define a model for creating new user accounts with additional attributes like password
 class UserCreate(UserBase):
     password: str = Field(
@@ -91,6 +98,7 @@ class UserCreate(UserBase):
         description="A strong password for the user's account. Must be at least 8 characters long and include uppercase and lowercase letters, a digit, and a special character.",
         example="SecurePassword123!"
     )
+
 
     @validator('password')
     def validate_password(cls, v):
@@ -106,6 +114,7 @@ class UserCreate(UserBase):
             raise ValueError("Password must contain at least one special character.")
         return v
 
+
     class Config:
         json_schema_extra = {
             "description": "Model for creating a new user account.",
@@ -118,6 +127,7 @@ class UserCreate(UserBase):
                 "profile_picture_url": "https://example.com/profile_pictures/jane_smith.jpg"
             }
         }
+
 
 # Define a model for updating user information with optional fields
 class UserUpdate(BaseModel):
@@ -144,6 +154,7 @@ class UserUpdate(BaseModel):
         example="https://example.com/profile_pictures/john_doe_updated.jpg"
     )
 
+
     @validator('profile_picture_url', pre=True, always=True)
     def validate_profile_picture_url(cls, v):
         if v is not None:
@@ -151,6 +162,7 @@ class UserUpdate(BaseModel):
             if not re.search(r"\.(jpg|jpeg|png)$", parsed_url.path):
                 raise ValueError("Profile picture URL must point to a valid image file (JPEG, PNG).")
         return v
+
 
     class Config:
         json_schema_extra = {
@@ -162,6 +174,7 @@ class UserUpdate(BaseModel):
                 "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
             }
         }
+
 
 # Define a model for the user response, which includes fields populated during queries
 class UserResponse(UserBase):
@@ -225,6 +238,7 @@ class UserResponse(UserBase):
             }
         }
 
+
 # Define a model for a paginated list of user responses, including pagination details
 class UserListResponse(BaseModel):
     items: List[UserResponse] = Field(
@@ -235,6 +249,7 @@ class UserListResponse(BaseModel):
         ...,
         description="Pagination details including the current page, total pages, total items, and navigational links."
     )
+
 
     class Config:
         json_schema_extra = {
@@ -287,6 +302,7 @@ class UserListResponse(BaseModel):
             }
         }
 
+
 # Define a model for user login requests
 class LoginRequest(BaseModel):
     username: str = Field(
@@ -300,6 +316,7 @@ class LoginRequest(BaseModel):
         example="SecurePassword123!"
     )
 
+
     class Config:
         json_schema_extra = {
             "description": "Model for user login request.",
@@ -308,6 +325,7 @@ class LoginRequest(BaseModel):
                 "password": "SecurePassword123!"
             }
         }
+
 
 # Define a model for error responses in case of issues
 class ErrorResponse(BaseModel):
@@ -322,6 +340,7 @@ class ErrorResponse(BaseModel):
         example="The provided username does not exist or the password is incorrect."
     )
 
+
     class Config:
         json_schema_extra = {
             "description": "Model for error responses.",
@@ -330,3 +349,5 @@ class ErrorResponse(BaseModel):
                 "details": "The provided username does not exist or the password is incorrect."
             }
         }
+
+
