@@ -117,5 +117,3 @@ We are excited to have you on board and look forward to seeing your contribution
 If you have any questions or need assistance, don't hesitate to reach out to your mentor or team lead. We are here to support you and ensure that you have a rewarding and enriching experience.
 
 Once again, welcome to the Event Manager Company! Let's embark on this exciting journey together and create something remarkable.
-
-Happy coding and happy learning!
