@@ -7,7 +7,7 @@
 - [Issue 4](https://github.com/VamsiNayunipati/event_manager_fork/issues/7) - Problem and Solution, [Code Fix](https://github.com/VamsiNayunipati/event_manager_fork/commit/be7339215a6c2dcd06a22b728f62e2c16937c837)
 - [Issue 5]() - Problem and Solution, [Code Fix]()
 
-
+The 6th issue which is demonstrated in the video is resolved by Professor.
 
 [Click Here](https://github.com/VamsiNayunipati/event_manager_fork/blob/main/DockerHub-image.png) for the project image deployed to Dockerhub.
 
