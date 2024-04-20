@@ -56,7 +56,7 @@ class User(Base):
     hashed_password: Mapped[str] = Column(String(255), nullable=False)
     full_name: Mapped[str] = Column(String(100), nullable=True)
     bio: Mapped[str] = Column(String(500), nullable=True)
-    profile_picture_url: Mapped[str] = Column(String(255), nullablcdqe=True)
+    profile_picture_url: Mapped[str] = Column(String(255), nullable=True)
     role: Mapped[UserRole] = Column(SQLAlchemyEnum(UserRole), default=UserRole.ANONYMOUS, nullable=False)
     is_professional: Mapped[bool] = Column(Boolean, default=False)
     professional_status_updated_at: Mapped[datetime] = Column(DateTime(timezone=True), nullable=True)

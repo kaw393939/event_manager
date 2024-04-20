@@ -47,6 +47,15 @@ async def test_update_user(async_client, user, token):
     assert response.json()["email"] == updated_data["email"]
 
 @pytest.mark.asyncio
+async def test_update_user2(async_client, user, token):
+    updated_data = {"email": f"updated_{user.id}@example.com","bio": "I am a senior ."}
+    headers = {"Authorization": f"Bearer {token}"}
+    response = await async_client.put(f"/users/{user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["email"] == updated_data["email"]
+    assert response.json()["bio"] == updated_data["bio"]
+
+@pytest.mark.asyncio
 async def test_delete_user(async_client, user, token):
     headers = {"Authorization": f"Bearer {token}"}
     delete_response = await async_client.delete(f"/users/{user.id}", headers=headers)
