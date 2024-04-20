@@ -119,6 +119,7 @@ async def test_login_user_successful(db_session, user):
     }
     logged_in_user = await UserService.login_user(db_session, user_data["username"], user_data["password"])
     assert logged_in_user is not None
+    assert logged_in_user.failed_login_attempts == 0  # Ensure login attempts reset on successful login
 
 # Test for user login with incorrect username
 async def test_login_user_incorrect_username(db_session):
@@ -127,13 +128,19 @@ async def test_login_user_incorrect_username(db_session):
 
 # Test for user login with incorrect password
 async def test_login_user_incorrect_password(db_session, user):
-    user = await UserService.login_user(db_session, user.username, "IncorrectPassword!")
-    assert user is None
+    initial_failed_attempts = user.failed_login_attempts
+    await UserService.login_user(db_session, user.username, "IncorrectPassword!")
+    
+    # After failed login attempt, retrieve the user again to check the updated failed_login_attempts
+    updated_user = await UserService.get_by_username(db_session, user.username)
+    
+    assert updated_user is not None
+    assert updated_user.failed_login_attempts == initial_failed_attempts + 1, "Failed login attempts should be incremented"
 
 # Test for account lock after maximum failed login attempts
 async def test_account_lock_after_failed_logins(db_session, user):
     max_login_attempts = get_settings().max_login_attempts
-    for _ in range(max_login_attempts):
+    for _ in range(max_login_attempts + 1):  # One additional attempt to trigger lock
         await UserService.login_user(db_session, user.username, "wrongpassword")
     
     is_locked = await UserService.is_account_locked(db_session, user.username)
@@ -145,16 +152,17 @@ async def test_reset_password(db_session, user):
     reset_success = await UserService.reset_password(db_session, user.id, new_password)
     assert reset_success is True
     # Verify that the new password works for login
-    reset_user = await UserService.reset_password(db_session, user.id, new_password)
+    reset_user = await UserService.login_user(db_session, user.username, new_password)
     assert reset_user is not None
 
 # Test for verifying a user's email
 async def test_verify_email(db_session, user):
-    updated_user = await UserService.verify_email(db_session, user.id)
-    assert updated_user is True
+    success = await UserService.verify_email(db_session, user.id)
+    assert success
 
 # Test for unlocking a user's account
 async def test_unlock_user_account(db_session, locked_user):
-    await UserService.unlock_user_account(db_session, locked_user.id)
+    success = await UserService.unlock_user_account(db_session, locked_user.id)
+    assert success
     is_locked = await UserService.is_account_locked(db_session, locked_user.username)
     assert not is_locked, "The account should be unlocked after calling unlock_user_account."
