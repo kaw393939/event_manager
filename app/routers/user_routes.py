@@ -18,6 +18,26 @@ Key Highlights:
 - Utilizes OAuth2PasswordBearer for securing API endpoints, requiring valid access tokens for operations.
 """
 
+"""
+This Python file is part of a FastAPI application, demonstrating user management functionalities including creating, reading,
+updating, and deleting (CRUD) user information. It uses OAuth2 with Password Flow for security, ensuring that only authenticated
+users can perform certain operations. Additionally, the file showcases the integration of FastAPI with SQLAlchemy for asynchronous
+database operations, enhancing performance by non-blocking database calls.
+
+The implementation emphasizes RESTful API principles, with endpoints for each CRUD operation and the use of HTTP status codes
+and exceptions to communicate the outcome of operations. It introduces the concept of HATEOAS (Hypermedia as the Engine of
+Application State) by including navigational links in API responses, allowing clients to discover other related operations dynamically.
+
+OAuth2PasswordBearer is employed to extract the token from the Authorization header and verify the user's identity, providing a layer
+of security to the operations that manipulate user data.
+
+Key Highlights:
+- Use of FastAPI's Dependency Injection system to manage database sessions and user authentication.
+- Demonstrates how to perform CRUD operations in an asynchronous manner using SQLAlchemy with FastAPI.
+- Implements HATEOAS by generating dynamic links for user-related actions, enhancing API discoverability.
+- Utilizes OAuth2PasswordBearer for securing API endpoints, requiring valid access tokens for operations.
+"""
+
 from datetime import timedelta
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
@@ -95,7 +115,7 @@ async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, 
     )
 
 
-@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT, name="delete_user", tags=["User Management"])
+@router.delete("/users/{user_id}", status_code=status.HTTP_200_OK, name="delete_user", tags=["User Management"])
 async def delete_user(user_id: UUID, db: AsyncSession = Depends(get_async_db), token: str = Depends(oauth2_scheme)):
     """
     Delete a user by their ID.
@@ -105,11 +125,11 @@ async def delete_user(user_id: UUID, db: AsyncSession = Depends(get_async_db), t
     success = await UserService.delete(db, user_id)
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return Response(status_code=status.HTTP_200_OK)
 
 
 
-@router.post("/users/", response_model=UserResponse, status_code=status.HTTP_201_CREATED, tags=["User Management"], name="create_user")
+@router.post("/users/", response_model=UserResponse, status_code=status.HTTP_200_OK, tags=["User Management"], name="create_user")
 async def create_user(user: UserCreate, request: Request, db: AsyncSession = Depends(get_async_db), token: str = Depends(oauth2_scheme)):
     """
     Create a new user.
