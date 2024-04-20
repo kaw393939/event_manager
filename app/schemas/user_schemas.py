@@ -11,7 +11,7 @@ class UserBase(BaseModel):
     email: EmailStr = Field(...)
     full_name: Optional[str] = Field(None, max_length=100, pattern="^[a-zA-Z\s'-]+$")
     bio: Optional[str] = Field(None, max_length=500)
-    profile_picture_url: Optional[str] = Field(None, example="https://example.com/profile_pictures/john_doe_updated.jpg")
+    profile_picture_url: Optional[HttpUrl] = Field(None)
 
     @validator('profile_picture_url', pre=True, always=True)
     def validate_profile_picture_url(cls, v):
@@ -32,7 +32,7 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = Field(None)
     full_name: Optional[str] = Field(None, max_length=100, pattern="^[a-zA-Z\s'-]+$")
     bio: Optional[str] = Field(None, max_length=500)
-    profile_picture_url: Optional[str] = Field(None, example="https://example.com/profile_pictures/john_doe_updated.jpg")
+    profile_picture_url: Optional[HttpUrl] = Field(None)
 
     @validator('profile_picture_url', pre=True, always=True)
     def validate_profile_picture_url(cls, v):
