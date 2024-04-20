@@ -112,18 +112,19 @@ class UserService:
             if user.is_locked:
                 return None
             if verify_password(password, user.hashed_password):
-                user.failed_login_attempts = 0
+                user.failed_login_attempts = 0  # Reset failed login attempts after successful login
                 user.last_login_at = datetime.now(timezone.utc)
                 session.add(user)
-                await session.commit()
+                await session.commit()  # Commit changes after successful login
                 return user
             else:
                 user.failed_login_attempts += 1
                 if user.failed_login_attempts >= settings.max_login_attempts:
                     user.is_locked = True
                 session.add(user)
-                await session.commit()
+                await session.commit()  # Commit changes here to ensure that lock state is updated immediately
         return None
+
 
     @classmethod
     async def is_account_locked(cls, session: AsyncSession, username: str) -> bool:
