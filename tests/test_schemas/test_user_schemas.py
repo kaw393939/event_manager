@@ -49,3 +49,4 @@ def test_user_create_profile_picture_invalid(user_create_data):
         user_create_data["profile_picture_url"] = url
         with pytest.raises(ValidationError):
             UserCreate(**user_create_data)
+

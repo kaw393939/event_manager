@@ -49,23 +49,17 @@ class UserBase(BaseModel):
         example="https://example.com/profile_pictures/john_doe.jpg"
     )
 
-
-
-
-    # Validators are used to validate the data
     @validator('username')
     def validate_username(cls, v):
         if not re.match(r"^[a-zA-Z0-9_-]+$", v):
             raise ValueError("Username can only contain letters, numbers, underscores, and hyphens.")
         return v
 
-
     @validator('full_name')
     def validate_full_name(cls, v):
         if v and not re.match(r"^[a-zA-Z\s'-]+$", v):
             raise ValueError("Full name can only contain letters, spaces, hyphens, or apostrophes.")
         return v
-
 
     @validator('profile_picture_url', pre=True, always=True)
     def validate_profile_picture_url(cls, v):
@@ -75,7 +69,6 @@ class UserBase(BaseModel):
         if not re.search(r"\.(jpg|jpeg|png)$", parsed_url.path):
             raise ValueError("Profile picture URL must point to a valid image file (JPEG, PNG).")
         return v
-
 
     class Config:
         json_schema_extra = {
@@ -89,7 +82,6 @@ class UserBase(BaseModel):
             }
         }
 
-
 # Define a model for creating new user accounts with additional attributes like password
 class UserCreate(UserBase):
     password: str = Field(
@@ -99,21 +91,17 @@ class UserCreate(UserBase):
         example="SecurePassword123!"
     )
 
-
     @validator('password')
-    def validate_password(cls, v):
-        if len(v) < 8:
-            raise ValueError("Password must be at least 8 characters long.")
-        if not re.search(r"[A-Z]", v):
+    def validate_password_strength(cls, v):
+        if not any(char.isupper() for char in v):
             raise ValueError("Password must contain at least one uppercase letter.")
-        if not re.search(r"[a-z]", v):
+        if not any(char.islower() for char in v):
             raise ValueError("Password must contain at least one lowercase letter.")
-        if not re.search(r"\d", v):
+        if not any(char.isdigit() for char in v):
             raise ValueError("Password must contain at least one digit.")
-        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", v):
+        if not any(char in "!@#$%^&*(),.?\":{}|<>" for char in v):
             raise ValueError("Password must contain at least one special character.")
         return v
-
 
     class Config:
         json_schema_extra = {
@@ -349,5 +337,3 @@ class ErrorResponse(BaseModel):
                 "details": "The provided username does not exist or the password is incorrect."
             }
         }
-
-
