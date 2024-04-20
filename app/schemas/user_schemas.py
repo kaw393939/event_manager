@@ -142,7 +142,7 @@ class UserCreate(UserBase):
                 "email": "john.doe@example.com",
                 "password": "SecurePassword123!",
                 "full_name": "John Doe",
-                "bio": "I am a data scientist passionate about machine learning and big data analytics.",
+                "bio": "I am a software engineer with over 5 years of experience in building scalable web applications using Python and JavaScript.",
                 "profile_picture_url": "https://example.com/profile_pictures/jane_smith.jpg"
             }
         }
@@ -164,7 +164,7 @@ class UserUpdate(BaseModel):
         None,
         max_length=500,
         description="An updated biography or description of the user.",
-        example="I am a senior software engineer specializing in backend development with Python and Node.js."
+        example="I am a software engineer with over 5 years of experience in building scalable web applications using Python and JavaScript."
     )
     profile_picture_url: Optional[HttpUrl] = Field(
         None,
@@ -186,7 +186,7 @@ class UserUpdate(BaseModel):
             "example": {
                 "email": "john.doe.new@example.com",
                 "full_name": "John H. Doe",
-                "bio": "I am a senior software engineer specializing in backend development with Python and Node.js.",
+                "bio": "I am a senior software engineer specializing in backend development with Python and JavaScript.",
                 "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
             }
         }
