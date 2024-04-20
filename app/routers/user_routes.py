@@ -1,3 +1,4 @@
+#app/routers/user_routes.py
 """
 This Python file is part of a FastAPI application, demonstrating user management functionalities including creating, reading,
 updating, and deleting (CRUD) user information. It uses OAuth2 with Password Flow for security, ensuring that only authenticated
