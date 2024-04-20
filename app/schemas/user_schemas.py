@@ -142,8 +142,8 @@ class UserCreate(UserBase):
                 "email": "john.doe@example.com",
                 "password": "SecurePassword123!",
                 "full_name": "John Doe",
-                "bio": "I am a data scientist passionate about machine learning and big data analytics.",
-                "profile_picture_url": "https://example.com/profile_pictures/jane_smith.jpg"
+                "bio": "I am a software engineer with over 5 years of experience in building scalable web applications using Python and JavaScript.",
+                "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
             }
         }
 
@@ -247,8 +247,8 @@ class UserResponse(UserBase):
                 "created_at": "2023-04-01T10:15:30+00:00",
                 "updated_at": "2023-04-05T16:45:00+00:00",
                 "links": [
-                    {"rel": "self", "href": "https://api.example.com/users/a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6"},
-                    {"rel": "update", "href": "https://api.example.com/users/a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6"}
+                         {"rel": "self", "href": "https://api.example.com/users/a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6"},
+                         {"rel": "update", "href": "https://api.example.com/users/a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6"}
                 ]
             }
         }
