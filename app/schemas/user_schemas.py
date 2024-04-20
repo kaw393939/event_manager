@@ -166,7 +166,7 @@ class UserUpdate(BaseModel):
         description="An updated biography or description of the user.",
         example="I am a senior software engineer specializing in backend development with Python and Node.js."
     )
-    profile_picture_url: Optional[HttpUrl] = Field(
+    profile_picture_url: Optional[str] = Field(
         None,
         description="An updated URL to the user's profile picture.",
         example="https://example.com/profile_pictures/john_doe_updated.jpg"
