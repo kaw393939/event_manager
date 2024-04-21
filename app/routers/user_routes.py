@@ -95,7 +95,7 @@ async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, 
     )
 
 
-@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT, name="delete_user", tags=["User Management"])
+@router.delete("/users/{user_id}", status_code=status.HTTP_200_OK, name="delete_user", tags=["User Management"])
 async def delete_user(user_id: UUID, db: AsyncSession = Depends(get_async_db), token: str = Depends(oauth2_scheme)):
     """
     Delete a user by their ID.
