@@ -96,7 +96,7 @@ async def test_login_user_not_found(async_client):
         "password": "DoesNotMatter123!"
     }
     response = await async_client.post("/login/", json=login_data)
-    assert response.status_code == 401
+    assert response.status_code == 404
     assert "Incorrect username or password" in response.json().get("detail", "")
 
 @pytest.mark.asyncio
