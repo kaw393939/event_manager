@@ -1,4 +1,5 @@
 Issue1: https://github.com/pr86-projects/is601-hw10/issues/1 Add missing columns to the table
+Issue2: https://github.com/pr86-projects/is601-hw10/issues/2 Invalid user role
 
 # Event Manager Company: Software QA Analyst/Developer Onboarding Assignment
 
