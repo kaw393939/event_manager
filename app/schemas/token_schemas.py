@@ -28,5 +28,11 @@ class TokenData(BaseModel):
         }
 
 class RefreshTokenRequest(BaseModel):
-    refresh_token: str
+    refresh_token: str = Field(..., description="The refresh token used to obtain a new access token.")
 
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "refresh_token": "jhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            }
+        }
