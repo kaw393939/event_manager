@@ -21,6 +21,10 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+
+# Install curl in dockerfile
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 # Copy only the requirements, to cache them in Docker layer
 COPY ./requirements.txt /myapp/requirements.txt
 
