@@ -39,6 +39,13 @@ async def test_retrieve_user(async_client, user, token):
     assert response.json()["id"] == str(user.id)
 
 @pytest.mark.asyncio
+async def test_retrieve_user2(async_client, user, token):
+    headers = {"Authorization": f"Bearer {token}"}
+    response = await async_client.get(f"/users/{user.id}", headers=headers)
+    assert response.status_code == 200
+    assert response.json()["username"] == str(user.username)
+    
+    @pytest.mark.asyncio
 async def test_update_user(async_client, user, token):
     updated_data = {"email": f"updated_{user.id}@example.com"}
     headers = {"Authorization": f"Bearer {token}"}
