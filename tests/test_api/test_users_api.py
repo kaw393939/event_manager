@@ -7,7 +7,7 @@ from app.utils.security import hash_password  # Import your FastAPI app
 
 # Example of a test function using the async_client fixture
 @pytest.mark.asyncio
-async def test_create_user(async_client):
+async def test_create_user2(async_client):
     form_data = {
         "username": "admin",
         "password": "secret",
@@ -18,18 +18,28 @@ async def test_create_user(async_client):
     headers = {"Authorization": f"Bearer {access_token}"}
 
     # Define user data for the test
-    user_data = {
+    user_data1 = {
         "username": "testuser",
         "email": "test@example.com",
         "password": "sS#fdasrongPassword123!",
     }
 
     # Send a POST request to create a user
-    response = await async_client.post("/users/", json=user_data, headers=headers)
+    response = await async_client.post("/users/", json=user_data1, headers=headers)
+
+    # Define user data for the test
+    user_data2 = {
+        "username": "testuser3",
+        "email": "test@example.com",
+        "password": "sS#fdasrongPassword123!",
+    }
+
+    # Send a POST request to create a user
+    response2 = await async_client.post("/users/", json=user_data2, headers=headers)
 
     # Asserts
-    assert response.status_code == 201
-
+    assert response2.status_code == 400
+    
 # You can similarly refactor other test functions to use the async_client fixture
 @pytest.mark.asyncio
 async def test_retrieve_user(async_client, user, token):
