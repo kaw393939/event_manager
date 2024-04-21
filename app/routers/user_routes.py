@@ -55,6 +55,9 @@ async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(g
         id=user.id,
         username=user.username,
         email=user.email,
+        full_name=user.full_name,
+        bio=user.bio,
+        profile_picture_url=user.profile_picture_url,
         last_login_at=user.last_login_at,
         created_at=user.created_at,
         updated_at=user.updated_at,
@@ -130,7 +133,7 @@ async def create_user(user: UserCreate, request: Request, db: AsyncSession = Dep
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
     
-    created_user = await UserService.create(db, user.model_dump())
+    created_user = await UserService.get_by_email(db, user.email)
     if not created_user:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create user")
     
