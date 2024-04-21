@@ -1,4 +1,4 @@
-Issue1: https://github.com/pr86-projects/is601-hw10/issues/1
+Issue1: https://github.com/pr86-projects/is601-hw10/issues/1 Add missing columns to the table
 
 # Event Manager Company: Software QA Analyst/Developer Onboarding Assignment
 
