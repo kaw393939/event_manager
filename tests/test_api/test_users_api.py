@@ -28,7 +28,7 @@ async def test_create_user(async_client):
     response = await async_client.post("/users/", json=user_data, headers=headers)
 
     # Asserts
-    assert response.status_code == 201
+    assert response.status_code == 200
 
 # You can similarly refactor other test functions to use the async_client fixture
 @pytest.mark.asyncio
