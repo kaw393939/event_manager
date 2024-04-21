@@ -29,7 +29,7 @@ def upgrade() -> None:
     sa.Column('full_name', sa.String(length=100), nullable=True),
     sa.Column('bio', sa.String(length=500), nullable=True),
     sa.Column('profile_picture_url', sa.String(length=255), nullable=True),
-    sa.Column('role', sa.Enum('ADMIN', 'USER', 'PRO', name='userrole'), nullable=False),
+    sa.Column('role', sa.Enum('ADMIN', 'USER', 'PRO', 'ANONYMOUS', name='userrole'), nullable=False),
     sa.Column('last_login_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('failed_login_attempts', sa.Integer(), nullable=True),
     sa.Column('is_locked', sa.Boolean(), nullable=True),

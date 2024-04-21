@@ -1,3 +1,6 @@
+Issue1: https://github.com/pr86-projects/is601-hw10/issues/1 Add missing columns to the table
+Issue2: https://github.com/pr86-projects/is601-hw10/issues/2 Invalid user role
+
 # Event Manager Company: Software QA Analyst/Developer Onboarding Assignment
 
 Welcome to the Event Manager Company! As a newly hired Software QA Analyst/Developer and a graduate student in software engineering, you are embarking on an exciting journey to contribute to our project aimed at developing a secure, robust REST API that supports JWT token-based OAuth2 authentication. This API serves as the backbone of our user management system and will eventually expand to include features for event management and registration.
