@@ -47,4 +47,5 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     except Exception as e:
         logger.error("Error verifying password: %s", e)
         raise ValueError("Authentication process encountered an unexpected error") from e
-
+    
+    
