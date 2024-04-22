@@ -70,15 +70,15 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: gv225/devops_demo:${{ github.sha }} # Uses the Git SHA for tagging
+          tags: gv225/ev_hw:${{ github.sha }} # Uses the Git SHA for tagging
           platforms: linux/amd64,linux/arm64 # Multi-platform support
-          cache-from: type=registry,ref=gv225/devops_demo:cache
+          cache-from: type=registry,ref=gv225/ev_hw:cache
           cache-to: type=inline,mode=max
           
       - name: Scan the Docker image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'gv255/devops_demo:${{ github.sha }}'
+          image-ref: 'gv255/ev_hw:${{ github.sha }}'
           format: 'table'
           exit-code: '1' # Fail the job if vulnerabilities are found
           ignore-unfixed: true
