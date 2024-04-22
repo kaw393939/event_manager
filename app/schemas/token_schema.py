@@ -1,14 +1,32 @@
-from builtins import str
-from pydantic import BaseModel
+import re
+from datetime import datetime
+from typing import List, Optional
+from uuid import UUID
+from pydantic import BaseModel, EmailStr, Field, HttpUrl, validator, conint
 
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
+# Token Models
+class Token(BaseModel):
+    access_token: str = Field(..., description="The access token for authentication.")
+    token_type: str = Field(default="bearer", description="The type of the token.")
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
-                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lQGV4YW1wbGUuY29tIiwicm9sZSI6IkFVVEhFTlRJQ0FURUQiLCJleHAiOjE2MjQzMzQ5ODR9.ZGNjNjI2ZjI4MmYzNTk0MjVjNDk0ZjI4MjdjNGEzNmI1",
+                "access_token": "jhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 "token_type": "bearer"
             }
         }
+
+class TokenData(BaseModel):
+    username: Optional[str] = Field(None, description="The username that the token represents.")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "username": "user@example.com"
+            }
+        }
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
