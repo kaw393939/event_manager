@@ -95,7 +95,7 @@ async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, 
     )
 
 
-@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT, name="delete_user", tags=["User Management"])
+@router.delete("/users/{user_id}", status_code=status.HTTP_200_OK, name="delete_user", tags=["User Management"])
 async def delete_user(user_id: UUID, db: AsyncSession = Depends(get_async_db), token: str = Depends(oauth2_scheme)):
     """
     Delete a user by their ID.
@@ -105,11 +105,11 @@ async def delete_user(user_id: UUID, db: AsyncSession = Depends(get_async_db), t
     success = await UserService.delete(db, user_id)
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return Response(status_code=status.HTTP_200_OK)
 
 
 
-@router.post("/users/", response_model=UserResponse, status_code=status.HTTP_200_CREATED, tags=["User Management"], name="create_user")
+@router.post("/users/", response_model=UserResponse, status_code=status.HTTP_200_OK, tags=["User Management"], name="create_user")
 async def create_user(user: UserCreate, request: Request, db: AsyncSession = Depends(get_async_db), token: str = Depends(oauth2_scheme)):
     """
     Create a new user.
