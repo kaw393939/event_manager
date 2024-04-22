@@ -72,7 +72,7 @@ jobs:
           push: true
           tags: gv225/devops_demo:${{ github.sha }} # Uses the Git SHA for tagging
           platforms: linux/amd64,linux/arm64 # Multi-platform support
-          cache-from: type=registry,ref=kaw393939/wis_club_api:cache
+          cache-from: type=registry,ref=gv225/devops_demo:cache
           cache-to: type=inline,mode=max
           
       - name: Scan the Docker image
