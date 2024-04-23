@@ -80,8 +80,17 @@ class UserBase(BaseModel):
     # Validators are used to validate the data
     @validator('username')
     def validate_username(cls, v):
-        if not re.match(r"^[a-zA-Z0-9_-]+$", v):
+        # Check the length of the username
+        min_length = 3
+        max_length = 50
+        if len(v) < min_length or len(v) > max_length:
+            raise ValueError(f"Username must be between {min_length} and {max_length} characters long.")
+
+        # Check for valid characters in the username
+        allowed_pattern = r"^[a-zA-Z0-9_-]+$"
+        if not re.match(allowed_pattern, v):
             raise ValueError("Username can only contain letters, numbers, underscores, and hyphens.")
+
         return v
 
     @validator('full_name')
