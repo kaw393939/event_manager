@@ -67,3 +67,27 @@ def test_user_base_invalid_email(user_base_data_invalid):
     
     assert "value is not a valid email address" in str(exc_info.value)
     assert "john.doe.example.com" in str(exc_info.value)
+
+@pytest.fixture(scope="module")
+def db():
+    # Setup database connection or ORM session
+    yield None  # Return connection/session if needed
+    # Teardown database connection or ORM session
+
+def test_unique_username(db):
+    # Create a user with a unique username
+    user_data = {
+        "username": "test_user_123",
+        "email": "test@example.com",
+        "password": "TestPassword123!",
+        "full_name": "Test User",
+        "bio": "Testing user creation",
+        "profile_picture_url": "https://example.com/test_user.jpg"
+    }
+    user_create_schema = UserCreate(**user_data)
+    assert user_create_schema.username == "test_user_123"
+
+    # Attempt to create another user with the same username
+    with pytest.raises(ValueError) as excinfo:
+        UserCreate(**user_data)
+    assert "Username already exists." in str(excinfo.value)

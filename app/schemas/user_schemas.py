@@ -5,8 +5,9 @@ from datetime import datetime
 from enum import Enum
 import uuid
 import re
-
+from app.models.user_model import User
 from app.utils.nickname_gen import generate_nickname
+
 
 class UserRole(str, Enum):
     ANONYMOUS = "ANONYMOUS"
@@ -21,6 +22,10 @@ def validate_url(url: Optional[str]) -> Optional[str]:
     if not re.match(url_regex, url):
         raise ValueError('Invalid URL format')
     return url
+def validate_unique_username(cls, v):
+        if User.get_by_username(v):
+            raise ValueError("Username already exists.")
+        return v
 
 class UserBase(BaseModel):
     email: EmailStr = Field(..., example="john.doe@example.com")
