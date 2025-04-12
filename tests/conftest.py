@@ -182,30 +182,34 @@ async def users_with_same_role_50_users(db_session):
 
 @pytest.fixture
 async def admin_user(db_session: AsyncSession):
-    user = User(
-        nickname="admin_user",
-        email="admin@example.com",
-        first_name="John",
-        last_name="Doe",
-        hashed_password="securepassword",
-        role=UserRole.ADMIN,
-        is_locked=False,
-    )
+    user_data = {
+        "nickname":"admin_user",
+        "email":"admin@example.com",
+        "first_name":"John",
+        "last_name":"Doe",
+        "hashed_password":hash_password("securepassword"),
+        "role": UserRole.ADMIN,
+        "email_verified": True,
+        "is_locked": False,
+    }
+    user = User(**user_data)
     db_session.add(user)
     await db_session.commit()
     return user
 
 @pytest.fixture
 async def manager_user(db_session: AsyncSession):
-    user = User(
-        nickname="manager_john",
-        first_name="John",
-        last_name="Doe",
-        email="manager_user@example.com",
-        hashed_password="securepassword",
-        role=UserRole.MANAGER,
-        is_locked=False,
-    )
+    user_data = {
+        "nickname":"manager_john",
+        "first_name":"John",
+        "last_name":"Doe",
+        "email":"manager_user@example.com",
+        "hashed_password":hash_password("securepassword"),
+        "role":UserRole.MANAGER,
+        "email_verified": True,
+        "is_locked":False,
+    }
+    user = User(**user_data)
     db_session.add(user)
     await db_session.commit()
     return user
@@ -215,9 +219,10 @@ async def manager_user(db_session: AsyncSession):
 @pytest.fixture
 def user_base_data():
     return {
-        "username": "john_doe_123",
         "email": "john.doe@example.com",
-        "full_name": "John Doe",
+        "nickname": "johnnydoe",
+        "first_name": "John",
+        "last_name": "Doe",
         "bio": "I am a software engineer with over 5 years of experience.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
     }
@@ -241,7 +246,8 @@ def user_create_data(user_base_data):
 def user_update_data():
     return {
         "email": "john.doe.new@example.com",
-        "full_name": "John H. Doe",
+        "first_name": "John",
+        "last_name": "Doe",
         "bio": "I specialize in backend development with Python and Node.js.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
     }
@@ -249,7 +255,7 @@ def user_update_data():
 @pytest.fixture
 def user_response_data():
     return {
-        "id": "unique-id-string",
+        "id": str(uuid4()),
         "username": "testuser",
         "email": "test@example.com",
         "last_login_at": datetime.now(),
@@ -260,4 +266,4 @@ def user_response_data():
 
 @pytest.fixture
 def login_request_data():
-    return {"username": "john_doe_123", "password": "SecurePassword123!"}
+    return {"email": "john.doe.example.com", "password": "SecurePassword123!"}

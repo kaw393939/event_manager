@@ -7,6 +7,34 @@ from app.utils.nickname_gen import generate_nickname
 from app.utils.security import hash_password
 from app.services.jwt_service import decode_token  # Import your FastAPI app
 
+
+@pytest.fixture
+async def user_token(async_client, verified_user):
+    login_data = {"username": verified_user.email, "password": "MySuperPassword$1234"}
+    response = await async_client.post("/login/", data=login_data)
+    response.raise_for_status()
+    return response.json().get("access_token")
+
+@pytest.fixture
+async def admin_token(async_client, admin_user):
+    login_data = {
+        "username": "admin@example.com",
+        "password": "securepassword"
+    }
+    response = await async_client.post("/login/", data=login_data)
+    if response.status_code != 200:
+        print(f"Login failed with status code {response.status_code}: {response.text}")
+    response.raise_for_status()
+    return response.json().get("access_token")
+
+
+@pytest.fixture
+async def manager_token(async_client, manager_user):
+    login_data = {"username": "manager_user@example.com", "password": "securepassword"}
+    response = await async_client.post("/login/", data=login_data)
+    response.raise_for_status()
+    return response.json().get("access_token")
+    
 # Example of a test function using the async_client fixture
 @pytest.mark.asyncio
 async def test_create_user_access_denied(async_client, user_token, email_service):

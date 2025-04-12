@@ -1,3 +1,20 @@
+# Assignment for Event Manager Project by Grace Varga
+## I forked and cloned this repository to fix and debug. Below are the five issues I found:
+
+1. I originally ran pytest to see 12 errors appeared and 8 failures. I started with the errors which involved login access to a user, admin and manager. The [test_users_api.py](tests/test_api/test_users_api.py) was where the errors appeared as there was nothing defined to be user_token, admin token, and manager_token which I added appropriately to the file. Issue is [here](https://github.com/gvargaNJIT/event_manager/issues/1)
+
+2. Errors went away for the user_token tests but not the admin_token and manager_token. To fix this, I went into the [conftest.py](tests/conftest.py) file and mimicked the style and formatting of the verified_user to the admin_user and manager_user and that fixed the errors. Now onto the failed tests next. Issue is [here](https://github.com/gvargaNJIT/event_manager/issues/2)
+
+3. One test failed in [test_email.py](tests/test_email.py). This was trying to connect to a real SMTP server and getting disconnected. I used a mock server to fix this issue. Issue is [here](https://github.com/gvargaNJIT/event_manager/issues/3)
+
+4. Five tests were failing in [test_user_schemas.py](tests/test_schemas/test_user_schemas.py) and the big cause was missing data or mislabeled data. For two tests, they needed the [conftest.py](tests/conftest.py) file's user_base_data to have a nickname passed through but that wasn't there. And another needed an email when the input was labeled username. I also had to use uuid for the unique user id in the test_user_response_valid test. Issue is [here](https://github.com/gvargaNJIT/event_manager/issues/4)
+
+5. Two tests failed in [test_user_service.py](tests/test_services/test_user_service.py) which were similar to the problems in Issue 3 where the emails were trying to be sent to a real server. I then used the mocker server to simulate the register and create user for the email, since those were the tests that were failing. Issue is [here](https://github.com/gvargaNJIT/event_manager/issues/5)
+
+
+
+# Everything after this point is from my professor:
+
 # Event Manager Company: Software QA Analyst/Developer Onboarding Assignment
 
 Welcome to the Event Manager Company! As a newly hired Software QA Analyst/Developer and a student in software engineering, you are embarking on an exciting journey to contribute to our project aimed at developing a secure, robust REST API that supports JWT token-based OAuth2 authentication. This API serves as the backbone of our user management system and will eventually expand to include features for event management and registration.

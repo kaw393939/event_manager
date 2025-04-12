@@ -1,6 +1,7 @@
 from builtins import range
 import pytest
 from sqlalchemy import select
+from unittest.mock import AsyncMock, patch
 from app.dependencies import get_settings
 from app.models.user_model import User
 from app.services.user_service import UserService
@@ -8,14 +9,17 @@ from app.services.user_service import UserService
 pytestmark = pytest.mark.asyncio
 
 # Test creating a user with valid data
-async def test_create_user_with_valid_data(db_session, email_service):
+@patch("app.services.user_service.EmailService.send_verification_email", new_callable=AsyncMock)
+async def test_create_user_with_valid_data(mock_send_email, db_session, email_service):
     user_data = {
         "email": "valid_user@example.com",
         "password": "ValidPassword123!",
     }
+    mock_send_email.return_value = None
     user = await UserService.create(db_session, user_data, email_service)
     assert user is not None
     assert user.email == user_data["email"]
+    mock_send_email.assert_awaited_once()
 
 # Test creating a user with invalid data
 async def test_create_user_with_invalid_data(db_session, email_service):
@@ -90,14 +94,17 @@ async def test_list_users_with_pagination(db_session, users_with_same_role_50_us
     assert users_page_1[0].id != users_page_2[0].id
 
 # Test registering a user with valid data
-async def test_register_user_with_valid_data(db_session, email_service):
+@patch("app.services.user_service.EmailService.send_verification_email", new_callable=AsyncMock)
+async def test_register_user_with_valid_data(mock_send_email, db_session, email_service):
     user_data = {
         "email": "register_valid_user@example.com",
         "password": "RegisterValid123!",
     }
+    mock_send_email.return_value = None
     user = await UserService.register_user(db_session, user_data, email_service)
     assert user is not None
     assert user.email == user_data["email"]
+    mock_send_email.assert_awaited_once()
 
 # Test attempting to register a user with invalid data
 async def test_register_user_with_invalid_data(db_session, email_service):

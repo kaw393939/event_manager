@@ -44,6 +44,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         ValueError: If the hashed password format is incorrect or the function fails to verify.
     """
     try:
+        logger.info(f"Verifying password: {plain_password} against hash: {hashed_password}")
         return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
     except Exception as e:
         logger.error("Error verifying password: %s", e)
