@@ -41,11 +41,55 @@ def test_user_base_nickname_valid(nickname, user_base_data):
     user = UserBase(**user_base_data)
     assert user.nickname == nickname
 
-@pytest.mark.parametrize("nickname", ["test user", "test?user", "", "us"])
+@pytest.mark.parametrize("nickname", [
+    "test user",  # Contains space
+    "test?user",  # Contains invalid special character
+    "",           # Empty string
+    "us",         # Too short
+    "a" * 31,     # Too long (31 characters)
+    "--test",     # Starts with special character
+    "test--",     # Ends with special character
+    "test__user", # Contains consecutive special characters
+    "test--user", # Contains consecutive special characters
+])
 def test_user_base_nickname_invalid(nickname, user_base_data):
     user_base_data["nickname"] = nickname
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
+
+# Additional tests for the new nickname validation rules
+def test_nickname_validation_edge_cases(user_base_data):
+    # Valid nicknames
+    valid_nicknames = [
+        "abc",              # Minimum length
+        "a" * 30,           # Maximum length
+        "test-user",        # With hyphen
+        "test_user",        # With underscore
+        "test-user-123",    # Mixed
+        "test_user_123"     # Mixed
+    ]
+    
+    for nickname in valid_nicknames:
+        user_base_data["nickname"] = nickname
+        user = UserBase(**user_base_data)
+        assert user.nickname == nickname
+    
+    # Invalid nicknames
+    invalid_nicknames = [
+        "-test",            # Starts with hyphen
+        "_test",            # Starts with underscore
+        "test-",            # Ends with hyphen
+        "test_",            # Ends with underscore
+        "test--user",       # Consecutive hyphens
+        "test__user",       # Consecutive underscores
+        "test-_user",       # Consecutive special characters
+        "test_-user"        # Consecutive special characters
+    ]
+    
+    for nickname in invalid_nicknames:
+        user_base_data["nickname"] = nickname
+        with pytest.raises(ValidationError):
+            UserBase(**user_base_data)
 
 # Parametrized tests for URL validation
 @pytest.mark.parametrize("url", ["http://valid.com/profile.jpg", "https://valid.com/profile.png", None])
