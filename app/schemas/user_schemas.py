@@ -24,7 +24,14 @@ def validate_url(url: Optional[str]) -> Optional[str]:
 
 class UserBase(BaseModel):
     email: EmailStr = Field(..., example="john.doe@example.com")
-    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())
+    nickname: Optional[str] = Field(
+        None, 
+        min_length=3, 
+        max_length=30, 
+        pattern=r'^[\w-]+$', 
+        example=generate_nickname(),
+        description="Username between 3-30 characters, alphanumeric with underscores and hyphens only"
+    )
     first_name: Optional[str] = Field(None, example="John")
     last_name: Optional[str] = Field(None, example="Doe")
     bio: Optional[str] = Field(None, example="Experienced software developer specializing in web applications.")
@@ -33,6 +40,27 @@ class UserBase(BaseModel):
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
 
     _validate_urls = validator('profile_picture_url', 'linkedin_profile_url', 'github_profile_url', pre=True, allow_reuse=True)(validate_url)
+    
+    @validator('nickname')
+    def validate_nickname(cls, v):
+        if v is None:
+            return v
+        
+        if not 3 <= len(v) <= 30:
+            raise ValueError('Nickname must be between 3 and 30 characters long')
+        
+        if not re.match(r'^[\w-]+$', v):
+            raise ValueError('Nickname can only contain alphanumeric characters, underscores, and hyphens')
+        
+        # Check for consecutive special characters
+        if re.search(r'[-_]{2,}', v):
+            raise ValueError('Nickname cannot contain consecutive special characters')
+            
+        # Check if nickname starts or ends with special characters
+        if v[0] in '-_' or v[-1] in '-_':
+            raise ValueError('Nickname cannot start or end with special characters')
+            
+        return v
  
     class Config:
         from_attributes = True
@@ -43,7 +71,7 @@ class UserCreate(UserBase):
 
 class UserUpdate(UserBase):
     email: Optional[EmailStr] = Field(None, example="john.doe@example.com")
-    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example="john_doe123")
+    nickname: Optional[str] = Field(None, min_length=3, max_length=30, pattern=r'^[\w-]+$', example="john_doe123")
     first_name: Optional[str] = Field(None, example="John")
     last_name: Optional[str] = Field(None, example="Doe")
     bio: Optional[str] = Field(None, example="Experienced software developer specializing in web applications.")
