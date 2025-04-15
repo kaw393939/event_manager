@@ -39,7 +39,21 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     email: EmailStr = Field(..., example="john.doe@example.com")
-    password: str = Field(..., example="Secure*1234")
+    password: str = Field(..., example="Secure*1234", min_length=8)
+    
+    @validator('password')
+    def password_strength(cls, v):
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        if not re.search(r'[A-Z]', v):
+            raise ValueError('Password must contain an uppercase letter')
+        if not re.search(r'[a-z]', v):
+            raise ValueError('Password must contain a lowercase letter')
+        if not re.search(r'[0-9]', v):
+            raise ValueError('Password must contain a number')
+        if not re.search(r'[^A-Za-z0-9]', v):
+            raise ValueError('Password must contain a special character')
+        return v
 
 class UserUpdate(UserBase):
     email: Optional[EmailStr] = Field(None, example="john.doe@example.com")
@@ -50,7 +64,24 @@ class UserUpdate(UserBase):
     profile_picture_url: Optional[str] = Field(None, example="https://example.com/profiles/john.jpg")
     linkedin_profile_url: Optional[str] =Field(None, example="https://linkedin.com/in/johndoe")
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
+    password: Optional[str] = Field(None, example="Secure*1234")
 
+    @validator('password')
+    def password_strength(cls, v):
+        if v is None:
+            return v
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        if not re.search(r'[A-Z]', v):
+            raise ValueError('Password must contain an uppercase letter')
+        if not re.search(r'[a-z]', v):
+            raise ValueError('Password must contain a lowercase letter')
+        if not re.search(r'[0-9]', v):
+            raise ValueError('Password must contain a number')
+        if not re.search(r'[^A-Za-z0-9]', v):
+            raise ValueError('Password must contain a special character')
+        return v
+    
     @root_validator(pre=True)
     def check_at_least_one_value(cls, values):
         if not any(values.values()):
