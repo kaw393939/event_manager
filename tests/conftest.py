@@ -1,23 +1,8 @@
-"""
-File: test_database_operations.py
-
-Overview:
-This Python test file utilizes pytest to manage database states and HTTP clients for testing a web application built with FastAPI and SQLAlchemy. It includes detailed fixtures to mock the testing environment, ensuring each test is run in isolation with a consistent setup.
-
-Fixtures:
-- `async_client`: Manages an asynchronous HTTP client for testing interactions with the FastAPI application.
-- `db_session`: Handles database transactions to ensure a clean database state for each test.
-- User fixtures (`user`, `locked_user`, `verified_user`, etc.): Set up various user states to test different behaviors under diverse conditions.
-- `token`: Generates an authentication token for testing secured endpoints.
-- `initialize_database`: Prepares the database at the session start.
-- `setup_database`: Sets up and tears down the database before and after each test.
-"""
-
 # Standard library imports
-from builtins import range
 from datetime import datetime
 from unittest.mock import patch
 from uuid import uuid4
+from datetime import timedelta
 
 # Third-party imports
 import pytest
@@ -79,7 +64,7 @@ async def setup_database():
     yield
     async with engine.begin() as conn:
         # you can comment out this line during development if you are debugging a single test
-         await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
 
 @pytest.fixture(scope="function")
@@ -261,3 +246,21 @@ def user_response_data():
 @pytest.fixture
 def login_request_data():
     return {"username": "john_doe_123", "password": "SecurePassword123!"}
+
+@pytest.fixture
+async def user_token(user):
+    # Passing the user data as a dictionary
+    data = {"sub": user.email, "role": user.role}
+    return create_access_token(data=data)  # Pass 'data' instead of 'subject'
+ 
+@pytest.fixture
+async def admin_token(admin_user):
+    # Assuming you have an admin_user fixture that provides a user object
+    data = {"sub": str(admin_user.id), "role": "ADMIN"}  # Adjust the data as needed
+    return create_access_token(data=data, expires_delta=timedelta(minutes=30))
+ 
+@pytest.fixture
+async def manager_token(manager_user):
+    # Assuming you have a fixture `manager_user` that provides a manager user object
+    data = {"sub": str(manager_user.id), "role": "MANAGER"}  # Adjust the data as needed
+    return create_access_token(data=data, expires_delta=timedelta(minutes=30))
