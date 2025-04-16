@@ -32,7 +32,20 @@ class TemplateManager:
                 styled_html = styled_html.replace(f'<{tag}>', f'<{tag} style="{style}">')
         return styled_html
 
-    def render_template(self, template_name: str, **context) -> str:
+    def render_template(self, template_str: str, context: dict = None) -> str:
+        """
+        Render a template string with the provided context dictionary.
+        This is a simplified version for testing and utility use.
+        """
+        if context is None:
+            context = {}
+        rendered = template_str
+        for k, v in context.items():
+            rendered = rendered.replace(f"{{{{ {k} }}}}", str(v))
+        return rendered
+
+    # (The original render_template for file-based templates remains for production use)
+    def render_template_from_file(self, template_name: str, **context) -> str:
         """Render a markdown template with given context, applying advanced email styles."""
         header = self._read_template('header.md')
         footer = self._read_template('footer.md')

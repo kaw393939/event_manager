@@ -4,6 +4,9 @@ from sqlalchemy import select
 from app.dependencies import get_settings
 from app.models.user_model import User
 from app.services.user_service import UserService
+from unittest.mock import patch, AsyncMock
+import pytest
+from uuid import uuid4
 
 pytestmark = pytest.mark.asyncio
 
@@ -13,7 +16,8 @@ async def test_create_user_with_valid_data(db_session, email_service):
         "email": "valid_user@example.com",
         "password": "ValidPassword123!",
     }
-    user = await UserService.create(db_session, user_data, email_service)
+    with patch('app.services.email_service.EmailService.send_verification_email', AsyncMock()):
+        user = await UserService.create(db_session, user_data, email_service)
     assert user is not None
     assert user.email == user_data["email"]
 
@@ -24,19 +28,135 @@ async def test_create_user_with_invalid_data(db_session, email_service):
         "email": "invalidemail",  # Invalid email
         "password": "short",  # Invalid password
     }
-    user = await UserService.create(db_session, user_data, email_service)
+    with patch('app.services.email_service.EmailService.send_verification_email', AsyncMock()):
+        user = await UserService.create(db_session, user_data, email_service)
     assert user is None
 
 # Test fetching a user by ID when the user exists
 async def test_get_by_id_user_exists(db_session, user):
-    retrieved_user = await UserService.get_by_id(db_session, user.id)
-    assert retrieved_user.id == user.id
+    found = await UserService.get_by_id(db_session, user.id)
+    assert found is not None
+    assert found.id == user.id
 
-# Test fetching a user by ID when the user does not exist
-async def test_get_by_id_user_does_not_exist(db_session):
-    non_existent_user_id = "non-existent-id"
-    retrieved_user = await UserService.get_by_id(db_session, non_existent_user_id)
-    assert retrieved_user is None
+# Test fetching a user by ID when user does not exist
+async def test_get_by_id_user_not_exists(db_session):
+    found = await UserService.get_by_id(db_session, uuid4())
+    assert found is None
+
+# Test updating a user successfully
+async def test_update_user_success(db_session, email_service):
+    user_data = {
+        "email": f"update_{uuid4()}@example.com",
+        "password": "ValidPassword123!",
+    }
+    with patch('app.services.email_service.EmailService.send_verification_email', AsyncMock()):
+        user = await UserService.create(db_session, user_data, email_service)
+    updated = await UserService.update(db_session, user.id, {"bio": "Updated bio"})
+    assert updated is not None
+    assert updated.bio == "Updated bio"
+
+# Test updating a user that does not exist
+async def test_update_user_not_found(db_session):
+    updated = await UserService.update(db_session, uuid4(), {"bio": "No user"})
+    assert updated is None
+
+# Test deleting a user successfully
+async def test_delete_user_success(db_session, email_service):
+    user_data = {
+        "email": f"delete_{uuid4()}@example.com",
+        "password": "ValidPassword123!",
+    }
+    with patch('app.services.email_service.EmailService.send_verification_email', AsyncMock()):
+        user = await UserService.create(db_session, user_data, email_service)
+    deleted = await UserService.delete(db_session, user.id)
+    assert deleted is True
+
+# Test deleting a user that does not exist
+async def test_delete_user_not_found(db_session):
+    deleted = await UserService.delete(db_session, uuid4())
+    assert deleted is False
+
+# Test login user with wrong password
+async def test_login_user_wrong_password(db_session, email_service):
+    user_data = {
+        "email": f"loginwrong_{uuid4()}@example.com",
+        "password": "ValidPassword123!",
+    }
+    with patch('app.services.email_service.EmailService.send_verification_email', AsyncMock()):
+        user = await UserService.create(db_session, user_data, email_service)
+    user.email_verified = True
+    db_session.add(user)
+    await db_session.commit()
+    found = await UserService.login_user(db_session, user.email, "WrongPassword!")
+    assert found is None
+
+# Test login user with correct password
+async def test_login_user_success(db_session, email_service):
+    user_data = {
+        "email": f"loginsuccess_{uuid4()}@example.com",
+        "password": "ValidPassword123!",
+    }
+    with patch('app.services.email_service.EmailService.send_verification_email', AsyncMock()):
+        user = await UserService.create(db_session, user_data, email_service)
+    user.email_verified = True
+    db_session.add(user)
+    await db_session.commit()
+    found = await UserService.login_user(db_session, user.email, "ValidPassword123!")
+    assert found is not None
+    assert found.email == user.email
+
+# Test verify email with token (success and fail)
+async def test_verify_email_with_token(db_session, email_service):
+    user_data = {
+        "email": f"verify_{uuid4()}@example.com",
+        "password": "ValidPassword123!",
+    }
+    with patch('app.services.email_service.EmailService.send_verification_email', AsyncMock()):
+        user = await UserService.create(db_session, user_data, email_service)
+    token = user.verification_token
+    verified = await UserService.verify_email_with_token(db_session, user.id, token)
+    assert verified is True
+    # Wrong token
+    verified_fail = await UserService.verify_email_with_token(db_session, user.id, "badtoken")
+    assert verified_fail is False
+
+# Test reset password (success and not found)
+async def test_reset_password(db_session, email_service):
+    user_data = {
+        "email": f"reset_{uuid4()}@example.com",
+        "password": "ValidPassword123!",
+    }
+    with patch('app.services.email_service.EmailService.send_verification_email', AsyncMock()):
+        user = await UserService.create(db_session, user_data, email_service)
+    ok = await UserService.reset_password(db_session, user.id, "NewPassword123!")
+    assert ok is True
+    # Not found
+    ok2 = await UserService.reset_password(db_session, uuid4(), "NewPassword123!")
+    assert ok2 is False
+
+# Test unlock user account (success and not found)
+async def test_unlock_user_account(db_session, email_service):
+    user_data = {
+        "email": f"unlock_{uuid4()}@example.com",
+        "password": "ValidPassword123!",
+    }
+    with patch('app.services.email_service.EmailService.send_verification_email', AsyncMock()):
+        user = await UserService.create(db_session, user_data, email_service)
+    user.is_locked = True
+    db_session.add(user)
+    await db_session.commit()
+    ok = await UserService.unlock_user_account(db_session, user.id)
+    assert ok is True
+    # Not found
+    ok2 = await UserService.unlock_user_account(db_session, uuid4())
+    assert ok2 is False
+
+# Test list users and count
+async def test_list_and_count_users(db_session):
+    users = await UserService.list_users(db_session)
+    count = await UserService.count(db_session)
+    assert isinstance(users, list)
+    assert isinstance(count, int)
 
 # Test fetching a user by nickname when the user exists
 async def test_get_by_nickname_user_exists(db_session, user):
@@ -95,7 +215,8 @@ async def test_register_user_with_valid_data(db_session, email_service):
         "email": "register_valid_user@example.com",
         "password": "RegisterValid123!",
     }
-    user = await UserService.register_user(db_session, user_data, email_service)
+    with patch('app.services.email_service.EmailService.send_user_email', return_value=None):
+        user = await UserService.register_user(db_session, user_data, email_service)
     assert user is not None
     assert user.email == user_data["email"]
 
@@ -105,7 +226,8 @@ async def test_register_user_with_invalid_data(db_session, email_service):
         "email": "registerinvalidemail",  # Invalid email
         "password": "short",  # Invalid password
     }
-    user = await UserService.register_user(db_session, user_data, email_service)
+    with patch('app.services.email_service.EmailService.send_user_email', return_value=None):
+        user = await UserService.register_user(db_session, user_data, email_service)
     assert user is None
 
 # Test successful user login

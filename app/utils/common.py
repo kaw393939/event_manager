@@ -3,6 +3,14 @@ import os
 from app.dependencies import get_settings
 
 settings = get_settings()
+
+# Utility functions for common operations
+def is_empty(val):
+    return val == "" or val == [] or val is None
+
+def safe_get(d, key, default=None):
+    return d.get(key, default) if isinstance(d, dict) else default
+
 def setup_logging():
     """
     Sets up logging for the application using a configuration file.

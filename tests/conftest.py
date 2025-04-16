@@ -24,7 +24,7 @@ import pytest
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import sessionmaker
 from faker import Faker
 
 # Application-specific imports
@@ -43,7 +43,6 @@ settings = get_settings()
 TEST_DATABASE_URL = settings.database_url.replace("postgresql://", "postgresql+asyncpg://")
 engine = create_async_engine(TEST_DATABASE_URL, echo=settings.debug)
 AsyncTestingSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-AsyncSessionScoped = scoped_session(AsyncTestingSessionLocal)
 
 
 @pytest.fixture
@@ -84,7 +83,7 @@ async def setup_database():
 
 @pytest.fixture(scope="function")
 async def db_session(setup_database):
-    async with AsyncSessionScoped() as session:
+    async with AsyncTestingSessionLocal() as session:
         try:
             yield session
         finally:
@@ -187,9 +186,10 @@ async def admin_user(db_session: AsyncSession):
         email="admin@example.com",
         first_name="John",
         last_name="Doe",
-        hashed_password="securepassword",
+        hashed_password=hash_password("securepassword"),
         role=UserRole.ADMIN,
         is_locked=False,
+        email_verified=True,
     )
     db_session.add(user)
     await db_session.commit()
@@ -202,22 +202,53 @@ async def manager_user(db_session: AsyncSession):
         first_name="John",
         last_name="Doe",
         email="manager_user@example.com",
-        hashed_password="securepassword",
+        hashed_password=hash_password("securepassword"),
         role=UserRole.MANAGER,
         is_locked=False,
+        email_verified=True,
     )
     db_session.add(user)
     await db_session.commit()
     return user
 
+@pytest.fixture
+async def admin_token(async_client, admin_user):
+    login_data = {
+        "username": admin_user.email,
+        "password": "securepassword"
+    }
+    response = await async_client.post("/login/", data=login_data)
+    assert response.status_code == 200, f"Admin login failed: {response.text}"
+    return response.json()["access_token"]
+
+@pytest.fixture
+async def manager_token(async_client, manager_user):
+    login_data = {
+        "username": manager_user.email,
+        "password": "securepassword"
+    }
+    response = await async_client.post("/login/", data=login_data)
+    assert response.status_code == 200, f"Manager login failed: {response.text}"
+    return response.json()["access_token"]
+
+@pytest.fixture
+async def user_token(async_client, verified_user):
+    login_data = {
+        "username": verified_user.email,
+        "password": "MySuperPassword$1234"
+    }
+    response = await async_client.post("/login/", data=login_data)
+    assert response.status_code == 200, f"User login failed: {response.text}"
+    return response.json()["access_token"]
 
 # Fixtures for common test data
 @pytest.fixture
 def user_base_data():
     return {
-        "username": "john_doe_123",
+        "nickname": "john_doe_123",
         "email": "john.doe@example.com",
-        "full_name": "John Doe",
+        "first_name": "John",
+        "last_name": "Doe",
         "bio": "I am a software engineer with over 5 years of experience.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
     }
@@ -225,9 +256,10 @@ def user_base_data():
 @pytest.fixture
 def user_base_data_invalid():
     return {
-        "username": "john_doe_123",
+        "nickname": "john_doe_123",
         "email": "john.doe.example.com",
-        "full_name": "John Doe",
+        "first_name": "John",
+        "last_name": "Doe",
         "bio": "I am a software engineer with over 5 years of experience.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
     }
@@ -241,7 +273,8 @@ def user_create_data(user_base_data):
 def user_update_data():
     return {
         "email": "john.doe.new@example.com",
-        "full_name": "John H. Doe",
+        "first_name": "John H.",
+        "last_name": "Doe",
         "bio": "I specialize in backend development with Python and Node.js.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
     }
@@ -249,8 +282,8 @@ def user_update_data():
 @pytest.fixture
 def user_response_data():
     return {
-        "id": "unique-id-string",
-        "username": "testuser",
+        "id": "123e4567-e89b-12d3-a456-426614174000",
+        "nickname": "testuser",
         "email": "test@example.com",
         "last_login_at": datetime.now(),
         "created_at": datetime.now(),
@@ -260,4 +293,7 @@ def user_response_data():
 
 @pytest.fixture
 def login_request_data():
-    return {"username": "john_doe_123", "password": "SecurePassword123!"}
+    return {
+        "email": "john.doe@example.com",
+        "password": "SecurePassword123!"
+    }
