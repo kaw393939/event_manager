@@ -16,7 +16,7 @@ Fixtures:
 # Standard library imports
 from builtins import range
 from datetime import datetime
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock, AsyncMock
 from uuid import uuid4
 
 # Third-party imports
@@ -48,10 +48,10 @@ AsyncSessionScoped = scoped_session(AsyncTestingSessionLocal)
 
 @pytest.fixture
 def email_service():
-    # Assuming the TemplateManager does not need any arguments for initialization
-    template_manager = TemplateManager()
-    email_service = EmailService(template_manager=template_manager)
-    return email_service
+    mock_service = MagicMock()
+    mock_service.send_user_email = AsyncMock()
+    mock_service.send_verification_email = AsyncMock()
+    return mock_service
 
 
 # this is what creates the http client for your api tests
@@ -211,11 +211,10 @@ async def manager_user(db_session: AsyncSession):
     return user
 
 
-# Fixtures for common test data
 @pytest.fixture
 def user_base_data():
     return {
-        "username": "john_doe_123",
+        "nickname": "johnny",
         "email": "john.doe@example.com",
         "full_name": "John Doe",
         "bio": "I am a software engineer with over 5 years of experience.",
@@ -241,7 +240,8 @@ def user_create_data(user_base_data):
 def user_update_data():
     return {
         "email": "john.doe.new@example.com",
-        "full_name": "John H. Doe",
+        "first_name": "John",
+        "last_name": "Doe",
         "bio": "I specialize in backend development with Python and Node.js.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
     }
@@ -249,8 +249,8 @@ def user_update_data():
 @pytest.fixture
 def user_response_data():
     return {
-        "id": "unique-id-string",
-        "username": "testuser",
+        "id": str(uuid4()),
+        "nickname": "testuser",
         "email": "test@example.com",
         "last_login_at": datetime.now(),
         "created_at": datetime.now(),
@@ -260,4 +260,19 @@ def user_response_data():
 
 @pytest.fixture
 def login_request_data():
-    return {"username": "john_doe_123", "password": "SecurePassword123!"}
+    return {
+        "email": "john.doe@example.com",
+        "password": "SecurePassword123!"
+    }
+
+@pytest.fixture
+def user_token(user):
+    return create_access_token(data={"sub": str(user.id), "role": user.role.value})
+
+@pytest.fixture
+def admin_token(admin_user):
+    return create_access_token(data={"sub": str(admin_user.id), "role": admin_user.role.value})
+
+@pytest.fixture
+def manager_token(manager_user):
+    return create_access_token(data={"sub": str(manager_user.id), "role": manager_user.role.value})

@@ -25,8 +25,7 @@ def test_user_update_valid(user_update_data):
 # Tests for UserResponse
 def test_user_response_valid(user_response_data):
     user = UserResponse(**user_response_data)
-    assert user.id == user_response_data["id"]
-    # assert user.last_login_at == user_response_data["last_login_at"]
+    assert str(user.id) == user_response_data["id"]
 
 # Tests for LoginRequest
 def test_login_request_valid(login_request_data):
