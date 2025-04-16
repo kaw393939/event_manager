@@ -5,6 +5,8 @@ from app.database import Database
 from app.dependencies import get_settings
 from app.routers import user_routes
 from app.utils.api_description import getDescription
+from logging import logging
+
 app = FastAPI(
     title="User Management",
     description=getDescription(),
@@ -20,7 +22,10 @@ app = FastAPI(
 @app.on_event("startup")
 async def startup_event():
     settings = get_settings()
-    Database.initialize(settings.database_url, settings.debug)
+    try:
+        await Database.initialize(settings.database_url, settings.debug)
+    except ConnectionError as e:
+        logging.critical(f"Failed to initialize database: {str(e)}")
 
 @app.exception_handler(Exception)
 async def exception_handler(request, exc):
