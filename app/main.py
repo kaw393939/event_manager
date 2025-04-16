@@ -20,7 +20,10 @@ app = FastAPI(
 @app.on_event("startup")
 async def startup_event():
     settings = get_settings()
-    Database.initialize(settings.database_url, settings.debug)
+    try:
+        await Database.initialize(settings.database_url, settings.debug)
+    except ConnectionError as e:
+        logging.critical(f"Failed to initialize database: {str(e)}")
 
 @app.exception_handler(Exception)
 async def exception_handler(request, exc):
