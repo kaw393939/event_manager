@@ -1,121 +1,76 @@
-# Event Manager Company: Software QA Analyst/Developer Onboarding Assignment
+THIS IS MY ASSIGNMENT-10
 
-Welcome to the Event Manager Company! As a newly hired Software QA Analyst/Developer and a student in software engineering, you are embarking on an exciting journey to contribute to our project aimed at developing a secure, robust REST API that supports JWT token-based OAuth2 authentication. This API serves as the backbone of our user management system and will eventually expand to include features for event management and registration.
+Excited to Join Event Manager Company as a Software QA Analyst/Developer!
+As a student pursuing software engineering and now part of the Event Manager Company, I’ve begun working on an exciting project focused on building a secure and scalable REST API. This API forms the foundation of our user management system and uses JWT-based OAuth2 authentication for enhanced security. In the future, it will grow to include functionalities like event creation and registration.
 
-## Assignment Objectives
+SETUP INSTRUCTIONS
 
-1. **Familiarize with REST API functionality and structure**: Gain hands-on experience working with a REST API, understanding its endpoints, request/response formats, and authentication mechanisms.
+STEP 1: Fork the professor’s repository to your own GitHub account.
 
-2. **Implement and refine documentation**: Critically analyze and improve existing documentation based on issues identified in the instructor videos. Ensure that the documentation is up-to-date and accurately reflects the current state of the software.
+STEP 2: Clone the forked repository to your local machine to start working on it.
 
-3. **Engage in manual and automated testing**: Develop comprehensive test cases and leverage automated testing tools like pytest to push the project's test coverage towards 90%. Gain experience with different types of testing, such as unit testing, integration testing, and end-to-end testing.
+git clone: https://github.com/Mahathma-b5/Homework10.git
 
-4. **Explore and debug issues**: Dive deep into the codebase to investigate and resolve issues related to user profile updates and OAuth token generation. Utilize debugging tools, interpret error messages, and trace the flow of execution to identify the root cause of problems.
+STEP 3: Start the application using Docker
 
-5. **Collaborate effectively**: Experience the power of collaboration using Git for version control and GitHub for code reviews and issue tracking. Work with issues, branches, create pull requests, and merge code while following best practices.
+docker compose up --build
 
-## Setup and Preliminary Steps
+STEP 4: Access Swagger UI at : localhost/docs
 
-1. **Fork the Project Repository**: Fork the [project repository](https://github.com/yourusername/event_manager) to your own GitHub account. This creates a copy of the repository under your account, allowing you to work on the project independently.
+<img width="1440" alt="Screenshot 2025-04-19 at 6 27 21 PM" src="https://github.com/user-attachments/assets/b4fefe7c-67cf-406a-9425-f12f329a80df" />
 
-2. **Clone the Forked Repository**: Clone the forked repository to your local machine using the `git clone` command. This creates a local copy of the repository on your computer, enabling you to make changes and run the project locally.
+<img width="1440" alt="Screenshot 2025-04-19 at 6 27 35 PM" src="https://github.com/user-attachments/assets/58287cdf-101c-4fd1-84c3-cced51097598" />
 
-3. **Verify the Project Setup**: Follow the steps in the instructor video to set up the project using [Docker](https://www.docker.com/). Docker allows you to package the application with all its dependencies into a standardized unit called a container. Verify that you can access the API documentation at `http://localhost/docs` and the database using [PGAdmin](https://www.pgadmin.org/) at `http://localhost:5050`.
+STEP 5: Access PGAdmin at : localhost:5050
 
-## Testing and Database Management
+<img width="1440" alt="Screenshot 2025-04-19 at 6 29 36 PM" src="https://github.com/user-attachments/assets/475af9da-67cc-4452-a299-3021adf48ad3" />
 
-1. **Explore the API**: Use the Swagger UI at `http://localhost/docs` to familiarize yourself with the API endpoints, request/response formats, and authentication mechanisms. Swagger UI provides an interactive interface to explore and test the API endpoints.
+CLOSED ISSUES AND FIXES 
 
-2. **Run Tests**: Execute the provided test suite using pytest, a popular testing framework for Python. Running tests ensures that the existing functionality of the API is working as expected. Note that running tests will drop the database tables, so you may need to manually drop the Alembic version table using PGAdmin and re-run migrations to ensure a clean state.
+1-PASSWORD VALIDATION 
 
-3. **Increase Test Coverage**: To enhance the reliability of the API, aim to increase the project's test coverage to 90%. Write additional tests for various scenarios and edge cases to ensure that the API handles different situations correctly.
+To enhance authentication security, we implemented comprehensive password validation that accurately detects incorrect credentials during login attempts and provides clear error feedback to assist users. Additionally, we addressed the issue of weak password acceptance by enforcing strong password policies—requiring a mix of uppercase, lowercase, numbers, and special characters—to prevent unauthorized access. This is further supported by backend validation during user registration to ensure all passwords meet the required complexity standards.
 
-## Collaborative Development Using Git
+Link to the Issue- https://github.com/Mahathma-b5/Homework10/issues/3
 
-1. **Enable Issue Tracking**: Enable GitHub issues in your repository settings. [GitHub Issues](https://guides.github.com/features/issues/) is a powerful tool for tracking bugs, enhancements, and other tasks related to the project. It allows you to create, assign, and prioritize issues, facilitating effective collaboration among team members.
+2-TOKEN REQUEST ISSUE
 
-2. **Create Branches**: For each issue or task you work on, create a new branch with a descriptive name using the `git checkout -b` command. Branching allows you to work on different features or fixes independently without affecting the main codebase. It enables parallel development and helps maintain a stable main branch.
+To enhance both usability and security, the login system was updated by replacing traditional username-based authentication with email-based verification. Since email addresses are inherently unique and easier to remember, this change streamlines the login and verification process, making it more intuitive for users. It also eliminates confusion caused by duplicate or forgotten usernames. By leveraging email as the primary identifier, the system ensures more accurate user recognition and delivers a smoother, more efficient authentication experience overall.  
 
-3. **Pull Requests and Code Reviews**: When you have completed work on an issue, create a [pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests) to merge your changes into the main branch. Pull requests provide an opportunity for code review, where your team members can examine your changes, provide feedback, and suggest improvements. Code reviews help maintain code quality, catch potential issues, and promote knowledge sharing among the team.
+Link to the Issue- https://github.com/Mahathma-b5/Homework10/issues/2
 
-## Specific Issues to Address
+3- LOGIN PAGE ERROR FIX
 
-In this assignment, you will identify, document, and resolve five specific issues related to:
+I noticed that when users entered wrong login info or if their account was locked, the error messages weren’t very clear. So I updated the login logic to show proper messages — like “Incorrect email or password” for invalid attempts and “Account locked” if they’ve tried too many times
 
-1. **Username validation**: Investigate and resolve any issues related to username validation. This may involve handling special characters, enforcing length constraints, or ensuring uniqueness. Proper username validation is essential to maintain data integrity and prevent potential security vulnerabilities.
+Link to the Issue- https://github.com/Mahathma-b5/Homework10/pull/6
 
-2. **Password validation**: Ensure that password validation follows security best practices, such as enforcing minimum length, requiring complexity (e.g., a mix of uppercase, lowercase, numbers, and special characters), and properly hashing passwords before storing them in the database. Robust password validation protects user accounts and mitigates the risk of unauthorized access.
+4- JWT ACCESS TOKEN EXPIRY
 
-3. **Profile field edge cases**: Test and handle various scenarios related to updating profile fields. This may include updating the bio and profile picture URL simultaneously or individually. Consider different combinations of fields being updated and ensure that the API handles these cases gracefully. Edge case testing helps uncover potential issues and ensures a smooth user experience.
+The login authentication previously failed for users with ADMIN and MANAGER roles due to issues in JWT token handling. This was resolved by correcting the token generation and authentication logic to properly recognize and validate user roles during login. Additionally, several Pytest-related errors were fixed to ensure seamless testing of authentication flows and email verification functionalities.
 
-Additionally, you will resolve a sixth issue demonstrated in the instructor video. These issues will test various combinations and scenarios to simulate real-world usage and potential edge cases. By addressing these specific issues, you will gain experience in identifying and resolving common challenges in API development.
+Link to the Issue- https://github.com/Mahathma-b5/Homework10/pull/7
 
-## Submission Requirements
+5- URL VERIFICATION
 
-To complete this assignment, submit the following:
+To enhance data integrity and input validation, strict URL checks were implemented to prevent submission of improperly formatted or invalid links. Unit tests were added to verify both valid and invalid URL scenarios. The system now returns clear and descriptive error messages when invalid URLs are detected, ensuring all provided URLs meet standard formatting rules and improving overall reliability.
 
-1. **GitHub Repository Link**: Ensure that your repository is well-organized and includes:
-  - Links to five closed issues, each with accompanying test code and necessary application code modifications.
-  - Each issue should be well-documented, explaining the problem, the steps taken to resolve it, and the outcome. Proper documentation helps others understand your work and facilitates future maintenance.
-  - All issues should be merged into the main branch, following the Git workflow and best practices.
+Link to the Issue- https://github.com/Mahathma-b5/Homework10/pull/8
 
-2. **Updated README**: Replace the existing README with:
-  - Links to the closed issues, providing easy access to your work.
-  - Link to project image deployed to Dockerhub.
-  - A 2-3 paragraph reflection on what you learned from this assignment, focusing on both technical skills and collaborative processes. Reflect on the challenges you faced, the solutions you implemented, and the insights you gained. This reflection helps solidify your learning and provides valuable feedback for improving the assignment in the future.
+DOCKER HUB DEPLOYMENT:
 
-## Grading Rubric
 
-| Criteria                                                                                                                | Points |
-|-------------------------------------------------------------------------------------------------------------------------|--------|
-| Resolved 5 issues related to username validation, password validation, and profile field edge cases                      | 30     |
-| Resolved the issue demonstrated in the instructor video                                                                 | 20     |
-| Increased test coverage to 90% by writing comprehensive test cases                                                      | 20     |
-| Followed collaborative development practices using Git and GitHub (branching, pull requests, code reviews)              | 15     |
-| Submitted a well-organized GitHub repository with clear documentation, links to closed issues, and a reflective summary | 15     |
-| **Total**                                                                                                               | **100**|
+<img width="1470" alt="Screenshot 2025-04-19 at 8 51 17 PM" src="https://github.com/user-attachments/assets/1d2a91e1-7741-4c6e-881d-036efe2e8696" />
 
-## Resources and Documentation
+<img width="1264" alt="Screenshot 2025-04-19 at 8 53 20 PM" src="https://github.com/user-attachments/assets/a6348404-7080-43ec-bd71-b1d4d06130b6" />
 
-- **Instructor Videos and Important Links**:
- - [Introduction to REST API with Postgres](https://youtu.be/dgMCSND2FQw) - This video provides an overview of the REST API you'll be working with, including its structure, endpoints, and interaction with the PostgreSQL database.
- - [Assignment Instructions](https://youtu.be/TFblm7QrF6o) - Detailed instructions on your tasks, guiding you through the assignment step by step.
- - [Git Command Reference I created and some explanation for collaboration with git](git.md)
- - [Docker Commands and Running The Tests in the Application](docker.md)
- - Look at the code comments:
-    - [Test Configuration and Fixtures](tests/conftest.py)
-    - [API User Routes](app/routers/user_routes.py)
-    - [API Oauth Routes - Connection to HTTP](app/routers/oauth.py)
-    - [User Service - Business Logic - This implements whats called the service repository pattern](app/services/user_service.py)
-    - [User Schema - Pydantic models](app/schemas/user_schemas.py)
-    - [User Model - SQl Alchemy Model ](app/models/user_model.py)
-    - [Alembic Migration - this is what runs to create the tables when you do alembic upgrade head](alembic/versions/628adcb2d60e_initial_migration.py)
-    - See the tests folder for all the tests
 
- - API Documentation: `http://localhost/docs` - The Swagger UI documentation for the API, providing information on endpoints, request/response formats, and authentication.
- - Database Management: `http://localhost:5050` - The PGAdmin interface for managing the PostgreSQL database, allowing you to view and manipulate the database tables.
+TESTING:
 
-- **Code Documentation**:
- The project codebase includes docstrings and comments explaining various concepts and functionalities. Take the time to read through the code and understand how different components work together. Pay attention to the structure of the code, the naming conventions used, and the purpose of each function or class. Understanding the existing codebase will help you write code that is consistent and integrates well with the project.
+<img width="1035" alt="Screenshot 2025-04-19 at 7 39 44 PM" src="https://github.com/user-attachments/assets/1a170a66-0229-4322-a6ef-c11f9ea1c2b5" />
 
-- **Additional Resources**:
- - [SQLAlchemy Library](https://www.sqlalchemy.org/) - SQLAlchemy is a powerful SQL toolkit and Object-Relational Mapping (ORM) library for Python. It provides a set of tools for interacting with databases, including query building, database schema management, and data serialization. Familiarize yourself with SQLAlchemy's documentation to understand how it is used in the project for database operations.
- - [Pydantic Documentation](https://docs.pydantic.dev/latest/) - Pydantic is a data validation and settings management library for Python. It allows you to define data models with type annotations and provides automatic validation, serialization, and deserialization. Consult the Pydantic documentation to understand how it is used in the project for request/response validation and serialization.
- - [FastAPI Framework](https://fastapi.tiangolo.com/) - FastAPI is a modern, fast (high-performance) Python web framework for building APIs. It leverages Python's type hints and provides automatic API documentation, request/response validation, and easy integration with other libraries. Explore the FastAPI documentation to gain a deeper understanding of its features and how it is used in the project.
- - [Alembic Documentation](https://alembic.sqlalchemy.org/en/latest/index.html) - Alembic is a lightweight database migration tool for usage with SQLAlchemy. It allows you to define and manage database schema changes over time, ensuring that the database structure remains consistent across different environments. Refer to the Alembic documentation to learn how to create and apply database migrations in the project.
 
-These resources will provide you with a solid foundation to understand the tools, technologies, and concepts used in the project. Don't hesitate to explore them further and consult the documentation whenever you encounter challenges or need clarification.
+REFLECTIONS:
 
-## Conclusion
+This project was a valuable opportunity to bridge theoretical knowledge with real-world API development. I deepened my understanding of FastAPI, asynchronous database handling, and Pydantic validation while also improving my debugging and problem-solving skills. Throughout the process, I tackled challenges such as inconsistent data examples, missing validations, and unhandled login errors by implementing standardized data, robust validation logic, clearer error handling, and endpoint security. I also integrated JWT-based authentication, managed database migrations with Alembic, and set up an operational CI/CD pipeline using Docker and GitHub Actions. These hands-on experiences have significantly strengthened my skillset and will be highly beneficial for future collaborative projects and professional development in the industry.
 
-This assignment is designed to challenge you, help you grow as a developer, and prepare you for the real-world responsibilities of a Software QA Analyst/Developer. By working on realistic issues, collaborating with your team, and focusing on testing and quality assurance, you will gain valuable experience that will serve you throughout your career.
-
-Remember, the goal is not just to complete the assignment but to embrace the learning journey. Take the time to understand the codebase, ask questions, and explore new concepts. Engage with your team members, seek feedback, and learn from their experiences. Your dedication, curiosity, and willingness to learn will be the key to your success in this role.
-
-We are excited to have you on board and look forward to seeing your contributions to the project. Your fresh perspective and skills will undoubtedly make a positive impact on our team and the quality of our software.
-
-If you have any questions or need assistance, don't hesitate to reach out to your mentor or team lead. We are here to support you and ensure that you have a rewarding and enriching experience.
-
-Once again, welcome to the Event Manager Company! Let's embark on this exciting journey together and create something remarkable.
-
-Happy coding and happy learning!

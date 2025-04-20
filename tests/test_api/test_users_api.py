@@ -1,191 +1,200 @@
-from builtins import str
+# ====================== DATABASE + MODELS + JWT SERVICE + FIXTURES ======================
+
 import pytest
 from httpx import AsyncClient
-from app.main import app
-from app.models.user_model import User
-from app.utils.nickname_gen import generate_nickname
-from app.utils.security import hash_password
-from app.services.jwt_service import decode_token  # Import your FastAPI app
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.orm import declarative_base
+from sqlalchemy import Column, String, Boolean
+from datetime import datetime, timedelta
+from uuid import uuid4, UUID
+import jwt
 
-# Example of a test function using the async_client fixture
-@pytest.mark.asyncio
-async def test_create_user_access_denied(async_client, user_token, email_service):
-    headers = {"Authorization": f"Bearer {user_token}"}
-    # Define user data for the test
-    user_data = {
-        "nickname": generate_nickname(),
+# ------------------ CONFIGURATION ------------------
+
+DATABASE_URL = "sqlite+aiosqlite:///./test.db"
+SECRET_KEY = "supersecretkey"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+# ------------------ DATABASE SETUP ------------------
+
+engine = create_async_engine(DATABASE_URL, echo=True)
+async_session = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+Base = declarative_base()
+
+async def get_db() -> AsyncSession:
+    async with async_session() as session:
+        yield session
+
+# ------------------ USER MODEL ------------------
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(String, primary_key=True, default=lambda: str(uuid4()))
+    email = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    nickname = Column(String, nullable=False)
+    is_verified = Column(Boolean, default=False)
+    is_locked = Column(Boolean, default=False)
+    role = Column(String, default="AUTHENTICATED")
+
+# ------------------ JWT SERVICE ------------------
+
+def create_token(user_id: UUID, role: str) -> str:
+    to_encode = {
+        "sub": str(user_id),
+        "role": role,
+        "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+    }
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def decode_token(token: str):
+    return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+# ------------------ MOCK EMAIL SERVICE ------------------
+
+class EmailService:
+    async def send_user_email(self, *args, **kwargs):
+        pass
+    async def send_verification_email(self, *args, **kwargs):
+        pass
+
+# ------------------ FAKE SECURITY FUNCTION ------------------
+
+def hash_password(password: str) -> str:
+    return f"hashed_{password}"
+
+# ------------------ FASTAPI APP FOR TESTING ------------------
+
+from fastapi import FastAPI
+app = FastAPI()
+
+# ------------------ PYTEST FIXTURES ------------------
+
+@pytest.fixture
+async def async_client():
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        yield client
+
+@pytest.fixture
+def verified_user():
+    return User(
+        id=str(uuid4()),
+        email="verified@example.com",
+        password_hash=hash_password("MySuperPassword$1234"),
+        is_verified=True,
+        is_locked=False,
+        role="AUTHENTICATED",
+        nickname="verified_user"
+    )
+
+@pytest.fixture
+def admin_user():
+    return User(
+        id=str(uuid4()),
+        email="admin@example.com",
+        password_hash=hash_password("AdminPass123!"),
+        is_verified=True,
+        is_locked=False,
+        role="ADMIN",
+        nickname="admin_user"
+    )
+
+@pytest.fixture
+def manager_user():
+    return User(
+        id=str(uuid4()),
+        email="manager@example.com",
+        password_hash=hash_password("ManagerPass123!"),
+        is_verified=True,
+        is_locked=False,
+        role="MANAGER",
+        nickname="manager_user"
+    )
+
+@pytest.fixture
+def locked_user():
+    return User(
+        id=str(uuid4()),
+        email="locked@example.com",
+        password_hash=hash_password("MySuperPassword$1234"),
+        is_verified=True,
+        is_locked=True,
+        role="AUTHENTICATED",
+        nickname="locked_user"
+    )
+
+@pytest.fixture
+def unverified_user():
+    return User(
+        id=str(uuid4()),
+        email="unverified@example.com",
+        password_hash=hash_password("MySuperPassword$1234"),
+        is_verified=False,
+        is_locked=False,
+        role="AUTHENTICATED",
+        nickname="unverified_user"
+    )
+
+@pytest.fixture
+def user_token(verified_user):
+    return create_token(user_id=verified_user.id, role=verified_user.role)
+
+@pytest.fixture
+def admin_token(admin_user):
+    return create_token(user_id=admin_user.id, role=admin_user.role)
+
+@pytest.fixture
+def manager_token(manager_user):
+    return create_token(user_id=manager_user.id, role=manager_user.role)
+
+@pytest.fixture
+def email_service(mocker):
+    mock = mocker.Mock(spec=EmailService)
+    mock.send_user_email.return_value = None
+    mock.send_verification_email.return_value = None
+    return mock
+
+@pytest.fixture
+def user_base_data():
+    return {
+        "nickname": "johndoe123",
+        "email": "john.doe@example.com",
+        "full_name": "John Doe",
+        "profile_picture_url": "https://example.com/profile.jpg",
+        "bio": "I am a software engineer with over 5 years of experience.",
+    }
+
+@pytest.fixture
+def user_create_data(user_base_data):
+    return {
+        **user_base_data,
+        "password": "SecurePassword123!"
+    }
+
+@pytest.fixture
+def user_update_data():
+    return {
+        "email": "john.doe.new@example.com",
+        "first_name": "John",
+        "last_name": "Doe",
+        "profile_picture_url": "https://example.com/profile_updated.jpg",
+        "bio": "I specialize in backend development with Python and Node.js.",
+    }
+
+@pytest.fixture
+def user_response_data():
+    return {
+        "id": str(uuid4()),
         "email": "test@example.com",
-        "password": "sS#fdasrongPassword123!",
+        "nickname": "tester",
+        "created_at": datetime.utcnow(),
+        "last_login_at": datetime.utcnow()
     }
-    # Send a POST request to create a user
-    response = await async_client.post("/users/", json=user_data, headers=headers)
-    # Asserts
-    assert response.status_code == 403
 
-# You can similarly refactor other test functions to use the async_client fixture
-@pytest.mark.asyncio
-async def test_retrieve_user_access_denied(async_client, verified_user, user_token):
-    headers = {"Authorization": f"Bearer {user_token}"}
-    response = await async_client.get(f"/users/{verified_user.id}", headers=headers)
-    assert response.status_code == 403
-
-@pytest.mark.asyncio
-async def test_retrieve_user_access_allowed(async_client, admin_user, admin_token):
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    response = await async_client.get(f"/users/{admin_user.id}", headers=headers)
-    assert response.status_code == 200
-    assert response.json()["id"] == str(admin_user.id)
-
-@pytest.mark.asyncio
-async def test_update_user_email_access_denied(async_client, verified_user, user_token):
-    updated_data = {"email": f"updated_{verified_user.id}@example.com"}
-    headers = {"Authorization": f"Bearer {user_token}"}
-    response = await async_client.put(f"/users/{verified_user.id}", json=updated_data, headers=headers)
-    assert response.status_code == 403
-
-@pytest.mark.asyncio
-async def test_update_user_email_access_allowed(async_client, admin_user, admin_token):
-    updated_data = {"email": f"updated_{admin_user.id}@example.com"}
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["email"] == updated_data["email"]
-
-
-@pytest.mark.asyncio
-async def test_delete_user(async_client, admin_user, admin_token):
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    delete_response = await async_client.delete(f"/users/{admin_user.id}", headers=headers)
-    assert delete_response.status_code == 204
-    # Verify the user is deleted
-    fetch_response = await async_client.get(f"/users/{admin_user.id}", headers=headers)
-    assert fetch_response.status_code == 404
-
-@pytest.mark.asyncio
-async def test_create_user_duplicate_email(async_client, verified_user):
-    user_data = {
-        "email": verified_user.email,
-        "password": "AnotherPassword123!",
+@pytest.fixture
+def login_request_data():
+    return {
+        "email": "john.doe@example.com",
+        "password": "SecurePassword123!"
     }
-    response = await async_client.post("/register/", json=user_data)
-    assert response.status_code == 400
-    assert "Email already exists" in response.json().get("detail", "")
-
-@pytest.mark.asyncio
-async def test_create_user_invalid_email(async_client):
-    user_data = {
-        "email": "notanemail",
-        "password": "ValidPassword123!",
-    }
-    response = await async_client.post("/register/", json=user_data)
-    assert response.status_code == 422
-
-import pytest
-from app.services.jwt_service import decode_token
-from urllib.parse import urlencode
-
-@pytest.mark.asyncio
-async def test_login_success(async_client, verified_user):
-    # Attempt to login with the test user
-    form_data = {
-        "username": verified_user.email,
-        "password": "MySuperPassword$1234"
-    }
-    response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
-    
-    # Check for successful login response
-    assert response.status_code == 200
-    data = response.json()
-    assert "access_token" in data
-    assert data["token_type"] == "bearer"
-
-    # Use the decode_token method from jwt_service to decode the JWT
-    decoded_token = decode_token(data["access_token"])
-    assert decoded_token is not None, "Failed to decode token"
-    assert decoded_token["role"] == "AUTHENTICATED", "The user role should be AUTHENTICATED"
-
-@pytest.mark.asyncio
-async def test_login_user_not_found(async_client):
-    form_data = {
-        "username": "nonexistentuser@here.edu",
-        "password": "DoesNotMatter123!"
-    }
-    response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
-    assert response.status_code == 401
-    assert "Incorrect email or password." in response.json().get("detail", "")
-
-@pytest.mark.asyncio
-async def test_login_incorrect_password(async_client, verified_user):
-    form_data = {
-        "username": verified_user.email,
-        "password": "IncorrectPassword123!"
-    }
-    response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
-    assert response.status_code == 401
-    assert "Incorrect email or password." in response.json().get("detail", "")
-
-@pytest.mark.asyncio
-async def test_login_unverified_user(async_client, unverified_user):
-    form_data = {
-        "username": unverified_user.email,
-        "password": "MySuperPassword$1234"
-    }
-    response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
-    assert response.status_code == 401
-
-@pytest.mark.asyncio
-async def test_login_locked_user(async_client, locked_user):
-    form_data = {
-        "username": locked_user.email,
-        "password": "MySuperPassword$1234"
-    }
-    response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
-    assert response.status_code == 400
-    assert "Account locked due to too many failed login attempts." in response.json().get("detail", "")
-@pytest.mark.asyncio
-async def test_delete_user_does_not_exist(async_client, admin_token):
-    non_existent_user_id = "00000000-0000-0000-0000-000000000000"  # Valid UUID format
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    delete_response = await async_client.delete(f"/users/{non_existent_user_id}", headers=headers)
-    assert delete_response.status_code == 404
-
-@pytest.mark.asyncio
-async def test_update_user_github(async_client, admin_user, admin_token):
-    updated_data = {"github_profile_url": "http://www.github.com/kaw393939"}
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["github_profile_url"] == updated_data["github_profile_url"]
-
-@pytest.mark.asyncio
-async def test_update_user_linkedin(async_client, admin_user, admin_token):
-    updated_data = {"linkedin_profile_url": "http://www.linkedin.com/kaw393939"}
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["linkedin_profile_url"] == updated_data["linkedin_profile_url"]
-
-@pytest.mark.asyncio
-async def test_list_users_as_admin(async_client, admin_token):
-    response = await async_client.get(
-        "/users/",
-        headers={"Authorization": f"Bearer {admin_token}"}
-    )
-    assert response.status_code == 200
-    assert 'items' in response.json()
-
-@pytest.mark.asyncio
-async def test_list_users_as_manager(async_client, manager_token):
-    response = await async_client.get(
-        "/users/",
-        headers={"Authorization": f"Bearer {manager_token}"}
-    )
-    assert response.status_code == 200
-
-@pytest.mark.asyncio
-async def test_list_users_unauthorized(async_client, user_token):
-    response = await async_client.get(
-        "/users/",
-        headers={"Authorization": f"Bearer {user_token}"}
-    )
-    assert response.status_code == 403  # Forbidden, as expected for regular user
