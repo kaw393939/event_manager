@@ -67,3 +67,32 @@ def test_user_base_invalid_email(user_base_data_invalid):
     
     assert "value is not a valid email address" in str(exc_info.value)
     assert "john.doe.example.com" in str(exc_info.value)
+
+@pytest.mark.parametrize("nickname", ["admin", "root", "system"])
+def test_user_create_reserved_nickname(nickname, user_create_data):
+    user_create_data["nickname"] = nickname
+    with pytest.raises(ValidationError):
+        UserCreate(**user_create_data)
+
+def test_user_create_too_long_nickname(user_create_data):
+    user_create_data["nickname"] = "a" * 51
+    with pytest.raises(ValidationError):
+        UserCreate(**user_create_data)
+
+@pytest.mark.parametrize("password", ["short", "nouppercase123!", "NOLOWERCASE123!", "NoDigits!", "NoSpecial123"])
+def test_user_create_invalid_password(password, user_create_data):
+    user_create_data["password"] = password
+    with pytest.raises(ValidationError):
+        UserCreate(**user_create_data)
+    
+@pytest.mark.parametrize("nickname", ["-test-", "_test_", "test--test", "test__test"])
+def test_user_create_invalid_nickname_format(nickname, user_create_data):
+    user_create_data["nickname"] = nickname
+    with pytest.raises(ValidationError):
+        UserCreate(**user_create_data)
+
+@pytest.mark.parametrize("password", ["password123", "qwerty123", "12345678"])
+def test_user_create_common_password(password, user_create_data):
+    user_create_data["password"] = password
+    with pytest.raises(ValidationError):
+        UserCreate(**user_create_data)

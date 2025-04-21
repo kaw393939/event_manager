@@ -49,6 +49,7 @@ class UserService:
     async def get_by_email(cls, session: AsyncSession, email: str) -> Optional[User]:
         return await cls._fetch_user(session, email=email)
 
+ 
     @classmethod
     async def create(cls, session: AsyncSession, user_data: Dict[str, str], email_service: EmailService) -> Optional[User]:
         try:
@@ -56,7 +57,11 @@ class UserService:
             existing_user = await cls.get_by_email(session, validated_data['email'])
             if existing_user:
                 logger.error("User with given email already exists.")
-                return None
+                raise HTTPException(status_code=400, detail="Email already exists")
+            existing_nickname = await cls.get_by_nickname(session, validated_data.get('nickname', ''))
+            if existing_nickname:
+                logger.error("Nickname already exists.")
+                raise HTTPException(status_code=400, detail="Nickname already exists")
             validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             new_user = User(**validated_data)
             new_user.verification_token = generate_verification_token()
