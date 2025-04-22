@@ -46,6 +46,52 @@ AsyncTestingSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_c
 AsyncSessionScoped = scoped_session(AsyncTestingSessionLocal)
 
 
+import pytest
+
+import pytest
+
+@pytest.fixture
+async def user_token(async_client, db_session, user):
+    # mark the user as verified
+    user.email_verified = True
+    db_session.add(user)
+    await db_session.commit()
+
+    # OAuth2PasswordRequestForm wants form‑urlencoded data:
+    form = {
+        "username": user.email,
+        "password": "MySuperPassword$1234",
+    }
+
+    resp = await async_client.post(
+        "/login/",                                # ← your actual path
+        data=form,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    assert resp.status_code == 200, f"Login failed: {resp.text}"
+    return resp.json()["access_token"]
+
+@pytest.fixture
+async def manager_token(async_client, db_session, manager_user):
+    # make sure the manager is “verified”
+    manager_user.email_verified = True
+    db_session.add(manager_user)
+    await db_session.commit()
+
+    # OAuth2PasswordRequestForm needs form‑urlencoded data
+    form = {
+        "username": manager_user.email,
+        "password": "securepassword",  # use the same plain‑text you hashed in manager_user
+    }
+
+    resp = await async_client.post(
+        "/login/",
+        data=form,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    assert resp.status_code == 200, f"Manager login failed: {resp.text}"
+    return resp.json()["access_token"]
+
 @pytest.fixture
 def email_service():
     # Assuming the TemplateManager does not need any arguments for initialization
@@ -162,13 +208,20 @@ async def unverified_user(db_session):
 
 @pytest.fixture(scope="function")
 async def users_with_same_role_50_users(db_session):
+    emails = set()
     users = []
+
     for _ in range(50):
+        email = fake.email()
+        while email in emails:
+            email = fake.email()
+        emails.add(email)
+    
         user_data = {
             "nickname": fake.user_name(),
             "first_name": fake.first_name(),
             "last_name": fake.last_name(),
-            "email": fake.email(),
+            "email": email,
             "hashed_password": fake.password(),
             "role": UserRole.AUTHENTICATED,
             "email_verified": False,
@@ -177,8 +230,10 @@ async def users_with_same_role_50_users(db_session):
         user = User(**user_data)
         db_session.add(user)
         users.append(user)
+
     await db_session.commit()
     return users
+
 
 @pytest.fixture
 async def admin_user(db_session: AsyncSession):
@@ -187,7 +242,7 @@ async def admin_user(db_session: AsyncSession):
         email="admin@example.com",
         first_name="John",
         last_name="Doe",
-        hashed_password="securepassword",
+        hashed_password=hash_password("securepassword"),
         role=UserRole.ADMIN,
         is_locked=False,
     )
@@ -196,13 +251,27 @@ async def admin_user(db_session: AsyncSession):
     return user
 
 @pytest.fixture
+async def admin_token(async_client, db_session, admin_user):
+    admin_user.email_verified = True
+    db_session.add(admin_user)
+    await db_session.commit()
+
+    resp = await async_client.post(
+        "/login/",
+        data={"username": admin_user.email, "password": "securepassword"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    assert resp.status_code == 200, f"Admin login failed: {resp.text}"
+    return resp.json()["access_token"]
+
+@pytest.fixture
 async def manager_user(db_session: AsyncSession):
     user = User(
         nickname="manager_john",
         first_name="John",
         last_name="Doe",
         email="manager_user@example.com",
-        hashed_password="securepassword",
+        hashed_password= hash_password("securepassword"),
         role=UserRole.MANAGER,
         is_locked=False,
     )
@@ -261,3 +330,4 @@ def user_response_data():
 @pytest.fixture
 def login_request_data():
     return {"username": "john_doe_123", "password": "SecurePassword123!"}
+

@@ -74,6 +74,10 @@ class User(Base):
     email_verified: Mapped[bool] = Column(Boolean, default=False, nullable=False)
     hashed_password: Mapped[str] = Column(String(255), nullable=False)
 
+    @property
+    def username(self) -> str:
+        return self.email
+
 
     def __repr__(self) -> str:
         """Provides a readable representation of a user object."""

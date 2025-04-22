@@ -1,21 +1,36 @@
 from builtins import range
+from unittest.mock import AsyncMock, patch
 import pytest
 from sqlalchemy import select
 from app.dependencies import get_settings
 from app.models.user_model import User
 from app.services.user_service import UserService
 
+
 pytestmark = pytest.mark.asyncio
 
 # Test creating a user with valid data
+@pytest.mark.asyncio
 async def test_create_user_with_valid_data(db_session, email_service):
+    email_service.send_verification_email = AsyncMock(return_value=True)
+
     user_data = {
-        "email": "valid_user@example.com",
+        "username": "valid_user@example.com",
         "password": "ValidPassword123!",
+        "first_name": "Valid",
+        "last_name": "User",
+        "nickname": "val_user",
+        "bio": "A test user for validation",
+        "profile_picture_url": "https://example.com/pic.jpg",
+        "linkedin_profile_url": "https://linkedin.com/in/val_user",
+        "github_profile_url": "https://github.com/val_user"
     }
+
     user = await UserService.create(db_session, user_data, email_service)
     assert user is not None
-    assert user.email == user_data["email"]
+    assert user.email == user_data["username"]
+
+
 
 # Test creating a user with invalid data
 async def test_create_user_with_invalid_data(db_session, email_service):
@@ -58,16 +73,23 @@ async def test_get_by_email_user_does_not_exist(db_session):
     retrieved_user = await UserService.get_by_email(db_session, "non_existent_email@example.com")
     assert retrieved_user is None
 
-# Test updating a user with valid data
+@pytest.mark.asyncio
 async def test_update_user_valid_data(db_session, user):
     new_email = "updated_email@example.com"
-    updated_user = await UserService.update(db_session, user.id, {"email": new_email})
+    print(f"Original email: {user.email}")
+
+    updated_user = await UserService.update(db_session, user.id, {"username": new_email})
     assert updated_user is not None
+
+    await db_session.refresh(updated_user)
+    print(f"Updated email: {updated_user.email}")
+
     assert updated_user.email == new_email
+
 
 # Test updating a user with invalid data
 async def test_update_user_invalid_data(db_session, user):
-    updated_user = await UserService.update(db_session, user.id, {"email": "invalidemail"})
+    updated_user = await UserService.update(db_session, user.id, {"username": "invalidemail"})
     assert updated_user is None
 
 # Test deleting a user who exists
@@ -90,14 +112,24 @@ async def test_list_users_with_pagination(db_session, users_with_same_role_50_us
     assert users_page_1[0].id != users_page_2[0].id
 
 # Test registering a user with valid data
-async def test_register_user_with_valid_data(db_session, email_service):
+
+@pytest.mark.asyncio
+@patch("app.services.email_service.EmailService.send_verification_email", new_callable=AsyncMock)
+async def test_register_user_with_valid_data(mock_send_email, db_session, email_service):
     user_data = {
-        "email": "register_valid_user@example.com",
-        "password": "RegisterValid123!",
+        "username": "valid_user@example.com",
+        "email": "valid_user@example.com",  # required if you're storing both
+        "first_name": "Valid",
+        "last_name": "User",
+        "password": "ValidPassword123!",
     }
+
     user = await UserService.register_user(db_session, user_data, email_service)
+    
     assert user is not None
     assert user.email == user_data["email"]
+    mock_send_email.assert_awaited_once_with(user)
+
 
 # Test attempting to register a user with invalid data
 async def test_register_user_with_invalid_data(db_session, email_service):

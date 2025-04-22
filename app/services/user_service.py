@@ -53,22 +53,31 @@ class UserService:
     async def create(cls, session: AsyncSession, user_data: Dict[str, str], email_service: EmailService) -> Optional[User]:
         try:
             validated_data = UserCreate(**user_data).model_dump()
+
+            # username is actually email – map it and remove `username`
+            validated_data["email"] = validated_data.pop("username")
+
             existing_user = await cls.get_by_email(session, validated_data['email'])
             if existing_user:
                 logger.error("User with given email already exists.")
                 return None
+
             validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
+
             new_user = User(**validated_data)
             new_user.verification_token = generate_verification_token()
+
             new_nickname = generate_nickname()
             while await cls.get_by_nickname(session, new_nickname):
                 new_nickname = generate_nickname()
             new_user.nickname = new_nickname
+
             session.add(new_user)
             await session.commit()
+
             await email_service.send_verification_email(new_user)
-            
             return new_user
+
         except ValidationError as e:
             logger.error(f"Validation error during user creation: {e}")
             return None
@@ -76,24 +85,50 @@ class UserService:
     @classmethod
     async def update(cls, session: AsyncSession, user_id: UUID, update_data: Dict[str, str]) -> Optional[User]:
         try:
-            # validated_data = UserUpdate(**update_data).dict(exclude_unset=True)
-            validated_data = UserUpdate(**update_data).dict(exclude_unset=True)
+            print("Raw incoming update_data:", update_data)
 
+            # Step 1: Validate original data (expects 'username')
+            validated_user = UserUpdate(**update_data)
+            validated_data = validated_user.model_dump(exclude_unset=True)
+            print("Initial validated data:", validated_data)
+
+            # Step 2: Now safely map username → email
+            if "username" in validated_data:
+                validated_data["email"] = validated_data.pop("username")
+            print("After remapping username to email:", validated_data)
+
+            # Step 3: Abort if no fields left
+            if not validated_data:
+                logger.warning("Update skipped: No valid fields after validation.")
+                return None
+
+            # Step 4: Hash password if present
             if 'password' in validated_data:
                 validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
-            query = update(User).where(User.id == user_id).values(**validated_data).execution_options(synchronize_session="fetch")
+
+            # Step 5: Execute update
+            query = (
+                update(User)
+                .where(User.id == user_id)
+                .values(**validated_data)
+                .execution_options(synchronize_session="fetch")
+            )
             await cls._execute_query(session, query)
+
             updated_user = await cls.get_by_id(session, user_id)
             if updated_user:
-                session.refresh(updated_user)  # Explicitly refresh the updated user object
-                logger.info(f"User {user_id} updated successfully.")
+                await session.refresh(updated_user)
                 return updated_user
-            else:
-                logger.error(f"User {user_id} not found after update attempt.")
             return None
-        except Exception as e:  # Broad exception handling for debugging
-            logger.error(f"Error during user update: {e}")
+
+        except ValidationError as e:
+            logger.error(f"Validation error during user update: {e}")
             return None
+        except Exception as e:
+            logger.error(f"Unexpected error during user update: {e}")
+            return None
+
+
 
     @classmethod
     async def delete(cls, session: AsyncSession, user_id: UUID) -> bool:
