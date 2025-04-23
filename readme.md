@@ -119,3 +119,82 @@ If you have any questions or need assistance, don't hesitate to reach out to you
 Once again, welcome to the Event Manager Company! Let's embark on this exciting journey together and create something remarkable.
 
 Happy coding and happy learning!
+
+---
+
+## My Notes for the Project
+
+Here is a short summary of the results for the initial test run:
+
+![image](https://github.com/user-attachments/assets/9153886f-6ed7-4340-85db-bb8f5d51ae1c)
+
+Here are five examples of what was fixed:
+
+### 🐛 Bug: `create_access_token()` does not accept positional arguments
+
+**Description:**
+Multiple test functions failed with `TypeError: create_access_token() takes 0 positional arguments but 1 was given`. The `create_access_token` method was incorrectly defined to accept no parameters.
+
+**Fix:**
+Updated `create_access_token` in `jwt_service.py` to accept `data: dict` and `expires_delta: timedelta = None` as keyword-only arguments.
+
+```sh
+def create_access_token(*, data: dict, expires_delta: timedelta = None) -> str:
+```
+
+### 🐛 Bug: `verify_email()` sets column, not a value
+
+**Description:**
+Calling `user.verify_email()` incorrectly assigned a SQLAlchemy Column instead of setting `email_verified = True`.
+
+**Fix:**
+Updated `verify_email()` method in `user_model.py`:
+
+```sh
+def verify_email(self):
+    self.email_verified = True
+```
+
+### 🔧 Enhancement: Add `user_token` fixture for authenticated user tests
+
+**Description:**
+Tests relying on `user_token` failed due to missing fixture. This affected several RBAC-based tests in `test_users_api.py`.
+
+**Fix:**
+Added this fixture to `conftest.py`:
+
+```sh
+@pytest.fixture
+def user_token(user):
+    return create_access_token(data={"sub": user.email, "role": str(user.role.name)})
+```
+
+### 🧪 Test Coverage: Add validation for email_verified default state
+
+**Description:**
+The initial default of `email_verified = False` was not being asserted, which led to missed regressions.
+
+**Fix:**
+Added explicit assertion in `test_email_verification` test:
+
+```sh
+assert not user.email_verified
+```
+
+### 🔧 Enhancement: Add `user_base_data_invalid` fixture for schema validation
+
+**Description:**
+`test_user_base_invalid_email` failed due to missing `user_base_data_invalid` fixture.
+
+**Fix:**
+Added this fixture in `conftest.py`:
+
+```sh
+@pytest.fixture
+def user_base_data_invalid():
+    return {
+        "email": "john.doe.example.com",  # Missing @
+        ...
+    }
+```
+
