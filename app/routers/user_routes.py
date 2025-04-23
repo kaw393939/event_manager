@@ -33,9 +33,13 @@ from app.services.jwt_service import create_access_token
 from app.utils.link_generation import create_user_links, generate_pagination_links
 from app.dependencies import get_settings
 from app.services.email_service import EmailService
+
 router = APIRouter()
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
 settings = get_settings()
+
 @router.get("/users/{user_id}", response_model=UserResponse, name="get_user", tags=["User Management Requires (Admin or Manager Roles)"])
 async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
     """
@@ -232,14 +236,14 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Async
     raise HTTPException(status_code=401, detail="Incorrect email or password.")
 
 
-@router.get("/verify-email/{user_id}/{token}", status_code=status.HTTP_200_OK, name="verify_email", tags=["Login and Registration"])
-async def verify_email(user_id: UUID, token: str, db: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service)):
+@router.get("/verify-email/{email}/{token}", status_code=status.HTTP_200_OK, name="verify_email", tags=["Login and Registration"])
+async def verify_email(email: str, token: str, db: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service)):
     """
     Verify user's email with a provided token.
     
-    - **user_id**: UUID of the user to verify.
+    - **email**: email of the user.
     - **token**: Verification token sent to the user's email.
     """
-    if await UserService.verify_email_with_token(db, user_id, token):
+    if await UserService.verify_email_with_token(db, email, token):
         return {"message": "Email verified successfully"}
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token")
