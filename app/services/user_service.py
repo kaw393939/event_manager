@@ -50,7 +50,7 @@ class UserService:
         return await cls._fetch_user(session, email=email)
 
     @classmethod
-    async def create(cls, session: AsyncSession, user_data: Dict[str, str], email_service: EmailService) -> Optional[User]:
+    async def create(cls, session: AsyncSession, user_data: Dict[str, str]) -> Optional[User]:
         try:
             validated_data = UserCreate(**user_data).model_dump()
             existing_user = await cls.get_by_email(session, validated_data['email'])
@@ -66,7 +66,7 @@ class UserService:
             new_user.nickname = new_nickname
             session.add(new_user)
             await session.commit()
-            await email_service.send_verification_email(new_user)
+            # await email_service.send_verification_email(new_user)
             
             return new_user
         except ValidationError as e:
@@ -112,8 +112,8 @@ class UserService:
         return result.scalars().all() if result else []
 
     @classmethod
-    async def register_user(cls, session: AsyncSession, user_data: Dict[str, str], get_email_service) -> Optional[User]:
-        return await cls.create(session, user_data, get_email_service)
+    async def register_user(cls, session: AsyncSession, user_data: Dict[str, str]) -> Optional[User]:
+        return await cls.create(session, user_data)
     
 
     @classmethod

@@ -14,9 +14,17 @@ def create_access_token(*, data: dict, expires_delta: timedelta = None):
     encoded_jwt = jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
     return encoded_jwt
 
+from jwt import ExpiredSignatureError, PyJWTError
+
 def decode_token(token: str):
     try:
+        # Decode the JWT token
         decoded = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
         return decoded
-    except jwt.PyJWTError:
-        return None
+    except ExpiredSignatureError:
+        # Return specific message when token is expired
+        return {"error": "Token has expired"}
+    except PyJWTError:
+        # Return general error message for other token issues
+        return {"error": "Invalid token"}
+
