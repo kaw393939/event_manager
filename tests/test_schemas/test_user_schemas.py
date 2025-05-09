@@ -31,7 +31,7 @@ def test_user_response_valid(user_response_data):
 # Tests for LoginRequest
 def test_login_request_valid(login_request_data):
     login = LoginRequest(**login_request_data)
-    assert login.email == login_request_data["email"]
+    assert login.username == login_request_data["username"]
     assert login.password == login_request_data["password"]
 
 # Parametrized tests for nickname and email validation
@@ -67,3 +67,28 @@ def test_user_base_invalid_email(user_base_data_invalid):
     
     assert "value is not a valid email address" in str(exc_info.value)
     assert "john.doe.example.com" in str(exc_info.value)
+
+def test_password_too_short():
+    with pytest.raises(ValidationError):
+        UserCreate(email="test@example.com", password="Short1!", nickname="user123")
+
+def test_password_no_uppercase():
+    with pytest.raises(ValidationError):
+        UserCreate(email="test@example.com", password="lowercase1!", nickname="user123")
+
+def test_password_no_number():
+    with pytest.raises(ValidationError):
+        UserCreate(email="test@example.com", password="Password!", nickname="user123")
+
+def test_password_no_special_char():
+    with pytest.raises(ValidationError):
+        UserCreate(email="test@example.com", password="Password1", nickname="user123")
+
+def test_password_valid():
+    user = UserCreate(email="test@example.com", password="StrongPass1!", nickname="user123")
+    assert user.password == "StrongPass1!"
+
+def test_user_update_no_fields():
+    with pytest.raises(ValidationError) as exc_info:
+        UserUpdate()
+    assert "At least one field must be provided" in str(exc_info.value)

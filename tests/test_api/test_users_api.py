@@ -68,7 +68,7 @@ async def test_create_user_duplicate_email(async_client, verified_user):
         "password": "AnotherPassword123!",
     }
     response = await async_client.post("/register/", json=user_data)
-    assert response.status_code == 400
+    assert response.status_code == 409
     assert "Email already exists" in response.json().get("detail", "")
 
 @pytest.mark.asyncio
@@ -116,21 +116,21 @@ async def test_login_user_not_found(async_client):
 
 @pytest.mark.asyncio
 async def test_login_incorrect_password(async_client, verified_user):
-    form_data = {
+    payload = {
         "username": verified_user.email,
         "password": "IncorrectPassword123!"
     }
-    response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
+    response = await async_client.post("/login/", json=payload)
     assert response.status_code == 401
     assert "Incorrect email or password." in response.json().get("detail", "")
 
 @pytest.mark.asyncio
 async def test_login_unverified_user(async_client, unverified_user):
-    form_data = {
+    payload = {
         "username": unverified_user.email,
         "password": "MySuperPassword$1234"
     }
-    response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
+    response = await async_client.post("/login/", json=payload)
     assert response.status_code == 401
 
 @pytest.mark.asyncio
@@ -189,3 +189,132 @@ async def test_list_users_unauthorized(async_client, user_token):
         headers={"Authorization": f"Bearer {user_token}"}
     )
     assert response.status_code == 403  # Forbidden, as expected for regular user
+
+@pytest.mark.asyncio
+async def test_create_user_valid_nickname(async_client, admin_token):
+    payload = {
+        "email": "validuser@example.com",
+        "password": "StrongPass123!",
+        "nickname": "valid_nick"
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.post("/users/", json=payload, headers=headers)
+    print("RESPONSE:", response.status_code, response.text)
+    assert response.status_code == 201
+    assert response.json()["nickname"] == "valid_nick"
+
+
+
+@pytest.mark.asyncio
+async def test_create_user_invalid_nickname_format(async_client, admin_token):
+    payload = {
+        "email": "badnick@example.com",
+        "password": "StrongPass123!",
+        "nickname": "bad@nick!"
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.post("/users/", json=payload, headers=headers)
+    print("RESPONSE:", response.status_code, response.text)
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_user_nickname_too_short(async_client, admin_token):
+    payload = {
+        "email": "shortnick@example.com",
+        "password": "StrongPass123!",
+        "nickname": "ab"
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.post("/users/", json=payload, headers=headers)
+    print("RESPONSE:", response.status_code, response.text)
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_user_duplicate_nickname(async_client, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    payload = {
+        "email": "dup1@example.com",
+        "password": "StrongPass123!",
+        "nickname": "duplicate"
+    }
+    await async_client.post("/users/", json=payload, headers=headers)
+
+    payload["email"] = "dup2@example.com"
+    response = await async_client.post("/users/", json=payload, headers=headers)
+    print("RESPONSE:", response.status_code, response.text)
+    assert response.status_code in (400, 409)
+
+
+
+@pytest.mark.asyncio
+async def test_create_user_weak_password(async_client):
+    payload = {
+        "email": "weak@example.com",
+        "password": "weakpass",  # Missing complexity
+        "nickname": "weakuser"
+    }
+    response = await async_client.post("/register/", json=payload)
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_update_user_with_no_fields(async_client, admin_user, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{admin_user.id}", json={}, headers=headers)
+    assert response.status_code == 422
+    assert "At least one field must be provided" in response.text
+
+@pytest.mark.asyncio
+async def test_update_user_only_profile_picture(async_client, admin_user, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    payload = {"profile_picture_url": "https://example.com/profile.jpg"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=payload, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["profile_picture_url"] == payload["profile_picture_url"]
+
+
+
+@pytest.mark.asyncio
+async def test_login_success(async_client, verified_user):
+    payload = {
+        "username": verified_user.email,
+        "password": "MySuperPassword$1234"
+    }
+    response = await async_client.post("/login/", json=payload)
+    assert response.status_code == 200
+    assert "access_token" in response.json()
+
+
+@pytest.mark.asyncio
+async def test_login_wrong_password(async_client, verified_user):
+    payload = {
+        "username": verified_user.email,
+        "password": "WrongPass123!"
+    }
+    response = await async_client.post("/login/", json=payload)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Incorrect email or password."
+
+
+@pytest.mark.asyncio
+async def test_login_user_not_found(async_client):
+    payload = {
+        "username": "nonexistent@example.com",
+        "password": "DoesNotMatter1!"
+    }
+    response = await async_client.post("/login/", json=payload)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Incorrect email or password."
+
+
+@pytest.mark.asyncio
+async def test_login_locked_user(async_client, locked_user):
+    payload = {
+        "username": locked_user.email,
+        "password": "Secure*1234"
+    }
+    response = await async_client.post("/login/", json=payload)
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Account locked due to too many failed login attempts."
