@@ -38,7 +38,8 @@ class UserBase(BaseModel):
         from_attributes = True
 
 class UserCreate(UserBase):
-    email: EmailStr = Field(..., example="john.doe@example.com")
+    # removed the email and enforce the nickname here
+    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())
     password: str = Field(..., example="Secure*1234")
 
 class UserUpdate(UserBase):

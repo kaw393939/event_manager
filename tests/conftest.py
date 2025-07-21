@@ -21,6 +21,8 @@ from uuid import uuid4
 
 # Third-party imports
 import pytest
+import uuid
+from unittest.mock import AsyncMock
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -33,6 +35,7 @@ from app.database import Base, Database
 from app.models.user_model import User, UserRole
 from app.dependencies import get_db, get_settings
 from app.utils.security import hash_password
+from app.services.email_service import EmailService
 from app.utils.template_manager import TemplateManager
 from app.services.email_service import EmailService
 from app.services.jwt_service import create_access_token
@@ -50,8 +53,11 @@ AsyncSessionScoped = scoped_session(AsyncTestingSessionLocal)
 def email_service():
     # Assuming the TemplateManager does not need any arguments for initialization
     template_manager = TemplateManager()
-    email_service = EmailService(template_manager=template_manager)
-    return email_service
+    service = EmailService(template_manager=template_manager)
+
+    service.send_user_email = AsyncMock()
+    service.send_verification_email = AsyncMock()
+    return service
 
 
 # this is what creates the http client for your api tests
@@ -81,6 +87,14 @@ async def setup_database():
         # you can comment out this line during development if you are debugging a single test
          await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
+
+#added this fixture
+@pytest.fixture
+def mock_email_sending():
+    with patch("app.services.email_service.EmailService.send_verification_email", new_callable=AsyncMock) as mock_send_verification_email, \
+         patch("app.services.email_service.EmailService.send_user_email", new_callable=AsyncMock) as mock_send_user_email:
+        yield mock_send_verification_email, mock_send_user_email
+ 
 
 @pytest.fixture(scope="function")
 async def db_session(setup_database):
@@ -216,6 +230,7 @@ async def manager_user(db_session: AsyncSession):
 def user_base_data():
     return {
         "username": "john_doe_123",
+        "nickname": "johndoe123",
         "email": "john.doe@example.com",
         "full_name": "John Doe",
         "bio": "I am a software engineer with over 5 years of experience.",
@@ -235,21 +250,25 @@ def user_base_data_invalid():
 
 @pytest.fixture
 def user_create_data(user_base_data):
-    return {**user_base_data, "password": "SecurePassword123!"}
+    return {**user_base_data, 
+            "password": "SecurePassword123!", 
+            "nickname": "johndoe123",
+            "password": "SecurePassword123!"}
 
 @pytest.fixture
 def user_update_data():
     return {
+        "first_name": "John",
         "email": "john.doe.new@example.com",
         "full_name": "John H. Doe",
         "bio": "I specialize in backend development with Python and Node.js.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
-    }
+        }
 
 @pytest.fixture
 def user_response_data():
     return {
-        "id": "unique-id-string",
+        "id": str(uuid.uuid4()),
         "username": "testuser",
         "email": "test@example.com",
         "last_login_at": datetime.now(),
@@ -260,4 +279,21 @@ def user_response_data():
 
 @pytest.fixture
 def login_request_data():
-    return {"username": "john_doe_123", "password": "SecurePassword123!"}
+    return {
+        "email": "test@example.com", 
+        "password": "SecurePassword123!"
+        }
+
+@pytest.fixture
+async def user_token(user):
+    return create_access_token(data={"sub": user.email, "role": user.role.value})
+
+
+@pytest.fixture
+async def admin_token(admin_user):
+    return create_access_token(data={"sub": admin_user.email, "role": admin_user.role.value})
+
+
+@pytest.fixture
+async def manager_token(manager_user):
+    return create_access_token(data={"sub": manager_user.email, "role": manager_user.role.value})
