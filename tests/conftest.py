@@ -21,6 +21,7 @@ from uuid import uuid4
 
 # Third-party imports
 import pytest
+import uuid
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -216,6 +217,7 @@ async def manager_user(db_session: AsyncSession):
 def user_base_data():
     return {
         "username": "john_doe_123",
+        "nickname": "johndoe123",
         "email": "john.doe@example.com",
         "full_name": "John Doe",
         "bio": "I am a software engineer with over 5 years of experience.",
@@ -235,21 +237,25 @@ def user_base_data_invalid():
 
 @pytest.fixture
 def user_create_data(user_base_data):
-    return {**user_base_data, "password": "SecurePassword123!"}
+    return {**user_base_data, 
+            "password": "SecurePassword123!", 
+            "nickname": "johndoe123",
+            "password": "SecurePassword123!"}
 
 @pytest.fixture
 def user_update_data():
     return {
+        "first_name": "John",
         "email": "john.doe.new@example.com",
         "full_name": "John H. Doe",
         "bio": "I specialize in backend development with Python and Node.js.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
-    }
+        }
 
 @pytest.fixture
 def user_response_data():
     return {
-        "id": "unique-id-string",
+        "id": str(uuid.uuid4()),
         "username": "testuser",
         "email": "test@example.com",
         "last_login_at": datetime.now(),
@@ -260,7 +266,10 @@ def user_response_data():
 
 @pytest.fixture
 def login_request_data():
-    return {"username": "john_doe_123", "password": "SecurePassword123!"}
+    return {
+        "email": "test@example.com", 
+        "password": "SecurePassword123!"
+        }
 
 @pytest.fixture
 async def user_token(user):
