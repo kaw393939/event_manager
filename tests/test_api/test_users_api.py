@@ -189,3 +189,33 @@ async def test_list_users_unauthorized(async_client, user_token):
         headers={"Authorization": f"Bearer {user_token}"}
     )
     assert response.status_code == 403  # Forbidden, as expected for regular user
+
+# adding these codes
+@pytest.mark.asyncio
+async def test_register_user_with_nickname(mock_email_sending, async_client):
+    user_data = {
+        "email": "userwithnick@example.com",
+        "nickname": "custom_nickname_123",
+        "password": "ValidPass123!"
+    }
+    response = await async_client.post("/register/", json=user_data)
+    assert response.status_code == 200
+    json_data = response.json()
+    assert json_data["nickname"] == user_data["nickname"]
+    assert json_data["email"] == user_data["email"]
+
+@pytest.mark.asyncio
+async def test_register_user_without_nickname(mock_email_sending, async_client):
+    user_data = {
+        "email": "userwithoutnick@example.com",
+        "password": "ValidPass123!"
+    }
+    response = await async_client.post("/register/", json=user_data)
+    assert response.status_code == 200
+    json_data = response.json()
+    # Should auto-generate nickname that fits pattern
+    assert "nickname" in json_data
+    assert json_data["email"] == user_data["email"]
+    # Optional: pattern check for generated nickname
+    import re
+    assert re.match(r"^[\w-]{3,}$", json_data["nickname"])
