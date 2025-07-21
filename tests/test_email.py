@@ -1,7 +1,7 @@
 import pytest
 from app.services.email_service import EmailService
 from app.utils.template_manager import TemplateManager
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 
     
 @pytest.mark.asyncio
