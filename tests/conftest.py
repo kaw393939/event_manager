@@ -88,6 +88,14 @@ async def setup_database():
          await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
 
+#added this fixture
+@pytest.fixture
+def mock_email_sending():
+    with patch("app.services.email_service.EmailService.send_verification_email", new_callable=AsyncMock) as mock_send_verification_email, \
+         patch("app.services.email_service.EmailService.send_user_email", new_callable=AsyncMock) as mock_send_user_email:
+        yield mock_send_verification_email, mock_send_user_email
+ 
+
 @pytest.fixture(scope="function")
 async def db_session(setup_database):
     async with AsyncSessionScoped() as session:
