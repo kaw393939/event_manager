@@ -22,6 +22,7 @@ from uuid import uuid4
 # Third-party imports
 import pytest
 import uuid
+from unittest.mock import AsyncMock
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -34,6 +35,7 @@ from app.database import Base, Database
 from app.models.user_model import User, UserRole
 from app.dependencies import get_db, get_settings
 from app.utils.security import hash_password
+from app.services.email_service import EmailService
 from app.utils.template_manager import TemplateManager
 from app.services.email_service import EmailService
 from app.services.jwt_service import create_access_token
@@ -51,8 +53,11 @@ AsyncSessionScoped = scoped_session(AsyncTestingSessionLocal)
 def email_service():
     # Assuming the TemplateManager does not need any arguments for initialization
     template_manager = TemplateManager()
-    email_service = EmailService(template_manager=template_manager)
-    return email_service
+    service = EmailService(template_manager=template_manager)
+
+    service.send_user_email = AsyncMock()
+    service.send_verification_email = AsyncMock()
+    return service
 
 
 # this is what creates the http client for your api tests
