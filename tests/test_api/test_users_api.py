@@ -6,6 +6,8 @@ from app.models.user_model import User
 from app.utils.nickname_gen import generate_nickname
 from app.utils.security import hash_password
 from app.services.jwt_service import decode_token  # Import your FastAPI app
+from app.schemas.user_schemas import UserCreate
+from pydantic import ValidationError
 
 # Example of a test function using the async_client fixture
 @pytest.mark.asyncio
@@ -189,3 +191,48 @@ async def test_list_users_unauthorized(async_client, user_token):
         headers={"Authorization": f"Bearer {user_token}"}
     )
     assert response.status_code == 403  # Forbidden, as expected for regular user
+
+# tests a taken nickname
+@pytest.mark.asyncio
+async def test_register_duplicate_nickname_fails(async_client, verified_user):
+    # Attempt to register a new user using an existing nickname
+    user_data = {
+        "nickname": verified_user.nickname,  # duplicate nickname
+        "email": "another_unique_email@example.com",  # unique email
+        "password": "StrongPass123$"
+    }
+
+    response = await async_client.post("/register/", json=user_data)
+
+    assert response.status_code == 400
+    assert "Nickname already taken" in response.json().get("detail", "")
+
+# tests behavior when password is short
+def test_password_too_short():
+    with pytest.raises(ValidationError):
+        UserCreate(email="test@example.com", password="A1!")
+
+# tests behavior when password is missing an uppercase letter
+def test_password_missing_uppercase():
+    with pytest.raises(ValidationError):
+        UserCreate(email="test@example.com", password="password1!")
+
+# tests behavior when password is missing a lowercase letter
+def test_password_missing_lowercase():
+    with pytest.raises(ValidationError):
+        UserCreate(email="test@example.com", password="PASSWORD1!")
+
+# tests behavior when password is missing a number
+def test_password_missing_number():
+    with pytest.raises(ValidationError):
+        UserCreate(email="test@example.com", password="Password!")
+
+# tests behavior when password is missing a special character
+def test_password_missing_special_char():
+    with pytest.raises(ValidationError):
+        UserCreate(email="test@example.com", password="Password1")
+
+# tests behavior when password is a valid one
+def test_valid_password():
+    user = UserCreate(email="test@example.com", password="StrongPass1!")
+    assert user.email == "test@example.com"

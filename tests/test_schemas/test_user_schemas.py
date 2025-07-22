@@ -3,6 +3,7 @@ import pytest
 from pydantic import ValidationError
 from datetime import datetime
 from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest
+from uuid import UUID
 
 # Tests for UserBase
 def test_user_base_valid(user_base_data):
@@ -25,7 +26,7 @@ def test_user_update_valid(user_update_data):
 # Tests for UserResponse
 def test_user_response_valid(user_response_data):
     user = UserResponse(**user_response_data)
-    assert user.id == user_response_data["id"]
+    assert user.id == UUID(user_response_data["id"])
     # assert user.last_login_at == user_response_data["last_login_at"]
 
 # Tests for LoginRequest

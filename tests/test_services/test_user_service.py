@@ -1,6 +1,8 @@
 from builtins import range
 import pytest
 from sqlalchemy import select
+from pydantic import ValidationError
+from unittest.mock import patch, MagicMock
 from app.dependencies import get_settings
 from app.models.user_model import User
 from app.services.user_service import UserService
@@ -8,14 +10,22 @@ from app.services.user_service import UserService
 pytestmark = pytest.mark.asyncio
 
 # Test creating a user with valid data
-async def test_create_user_with_valid_data(db_session, email_service):
+@patch("app.utils.smtp_connection.smtplib.SMTP")
+async def test_create_user_with_valid_data(mock_smtp, db_session, email_service):
+    # Simulate successful email sending
+    smtp_instance = MagicMock()
+    mock_smtp.return_value.__enter__.return_value = smtp_instance
+
     user_data = {
         "email": "valid_user@example.com",
         "password": "ValidPassword123!",
     }
+
     user = await UserService.create(db_session, user_data, email_service)
+
     assert user is not None
     assert user.email == user_data["email"]
+    smtp_instance.sendmail.assert_called_once()
 
 # Test creating a user with invalid data
 async def test_create_user_with_invalid_data(db_session, email_service):
@@ -24,8 +34,37 @@ async def test_create_user_with_invalid_data(db_session, email_service):
         "email": "invalidemail",  # Invalid email
         "password": "short",  # Invalid password
     }
-    user = await UserService.create(db_session, user_data, email_service)
-    assert user is None
+    with pytest.raises(ValidationError):
+        await UserService.create(db_session, user_data, email_service)
+
+# test using invalid data to register user
+async def test_register_user_with_invalid_data(db_session, email_service):
+    user_data = {
+        "email": "registerinvalidemail",  # Invalid email
+        "password": "short",  # Invalid password
+    }
+    with pytest.raises(ValidationError):
+        await UserService.register_user(db_session, user_data, email_service)
+
+async def test_count_users(db_session, user):
+    count = await UserService.count(db_session)
+    assert count >= 1  
+
+# test when account is locked
+async def test_is_account_locked_true(db_session, locked_user):
+    locked = await UserService.is_account_locked(db_session, locked_user.email)
+    assert locked is True
+
+# tests when account is unlocked
+async def test_is_account_locked_false(db_session, user):
+    locked = await UserService.is_account_locked(db_session, user.email)
+    assert locked is False
+
+# tests when account is locked and email does not exist
+async def test_is_account_locked_nonexistent_email(db_session):
+    locked = await UserService.is_account_locked(db_session, "noone@nowhere.com")
+    assert locked is False
+
 
 # Test fetching a user by ID when the user exists
 async def test_get_by_id_user_exists(db_session, user):
@@ -90,14 +129,22 @@ async def test_list_users_with_pagination(db_session, users_with_same_role_50_us
     assert users_page_1[0].id != users_page_2[0].id
 
 # Test registering a user with valid data
-async def test_register_user_with_valid_data(db_session, email_service):
+@patch("app.utils.smtp_connection.smtplib.SMTP")
+async def test_register_user_with_valid_data(mock_smtp, db_session, email_service):
+    # Simulate successful email sending
+    smtp_instance = MagicMock()
+    mock_smtp.return_value.__enter__.return_value = smtp_instance
+
     user_data = {
         "email": "register_valid_user@example.com",
         "password": "RegisterValid123!",
     }
+
     user = await UserService.register_user(db_session, user_data, email_service)
+
     assert user is not None
     assert user.email == user_data["email"]
+    smtp_instance.sendmail.assert_called_once()
 
 # Test attempting to register a user with invalid data
 async def test_register_user_with_invalid_data(db_session, email_service):
@@ -105,8 +152,8 @@ async def test_register_user_with_invalid_data(db_session, email_service):
         "email": "registerinvalidemail",  # Invalid email
         "password": "short",  # Invalid password
     }
-    user = await UserService.register_user(db_session, user_data, email_service)
-    assert user is None
+    with pytest.raises(ValidationError):
+        await UserService.register_user(db_session, user_data, email_service)
 
 # Test successful user login
 async def test_login_user_successful(db_session, verified_user):
