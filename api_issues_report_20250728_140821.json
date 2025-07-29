@@ -1,0 +1,202 @@
+{
+  "timestamp": "2025-07-28T14:08:21.990162",
+  "api_url": "http://localhost",
+  "issues_found": [],
+  "test_results": [
+    {
+      "test": "Username 'user@#$%'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.880626"
+    },
+    {
+      "test": "Username '  spaced  '",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.886274"
+    },
+    {
+      "test": "Username '\u7528\u6237'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.891120"
+    },
+    {
+      "test": "Username ''",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.895580"
+    },
+    {
+      "test": "Username 'ab'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.902789"
+    },
+    {
+      "test": "Username 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.907679"
+    },
+    {
+      "test": "Username 'USER'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.910794"
+    },
+    {
+      "test": "Username 'user.name'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.914509"
+    },
+    {
+      "test": "Username 'user name'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.917612"
+    },
+    {
+      "test": "Username '123user'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.920887"
+    },
+    {
+      "test": "Password '123'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.924389"
+    },
+    {
+      "test": "Password 'password'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.927579"
+    },
+    {
+      "test": "Password 'Password'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.931696"
+    },
+    {
+      "test": "Password '12345678'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.935871"
+    },
+    {
+      "test": "Password 'abcdefgh'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.940009"
+    },
+    {
+      "test": "Password 'ABCDEFGH'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.943475"
+    },
+    {
+      "test": "Password 'Pass123'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.947595"
+    },
+    {
+      "test": "Password 'a'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.951060"
+    },
+    {
+      "test": "Password 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.955113"
+    },
+    {
+      "test": "Password ''",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.959072"
+    },
+    {
+      "test": "Email case sensitivity",
+      "expected": "Should reject duplicate",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.967465"
+    },
+    {
+      "test": "Email 'invalid-email'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.971511"
+    },
+    {
+      "test": "Email 'test@'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.975111"
+    },
+    {
+      "test": "Email '@example.com'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.978583"
+    },
+    {
+      "test": "Email 'test..test@example.com'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.982945"
+    },
+    {
+      "test": "Email 'test@.example.com'",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.986377"
+    },
+    {
+      "test": "Email ''",
+      "expected": "Should be rejected",
+      "actual": "Rejected (405)",
+      "passed": true,
+      "timestamp": "2025-07-28T14:08:21.989881"
+    }
+  ],
+  "summary": {
+    "total_issues": 0,
+    "total_tests": 27,
+    "tests_passed": 27,
+    "tests_failed": 0
+  }
+}

@@ -36,10 +36,11 @@ class Settings(BaseSettings):
     openai_api_key: str = Field(default='NONE', description="Open AI Api Key")
     send_real_mail: bool = Field(default=False, description="use mock")
     # Email settings for Mailtrap
-    smtp_server: str = Field(default='smtp.mailtrap.io', description="SMTP server for sending emails")
-    smtp_port: int = Field(default=2525, description="SMTP port for sending emails")
-    smtp_username: str = Field(default='your-mailtrap-username', description="Username for SMTP server")
-    smtp_password: str = Field(default='your-mailtrap-password', description="Password for SMTP server")
+    smtp_server: str = Field(default='smtp.mailtrap.io', description="SMTP server")
+    smtp_port: int = Field(default=2525, description="SMTP port")
+    smtp_username: str = Field(default='your-mailtrap-username', description="SMTP username")
+    smtp_password: str = Field(default='your-mailtrap-password', description="SMTP password")
+    send_real_mail: bool = Field(default=False, description="Use real SMTP or not")
 
 
     class Config:
