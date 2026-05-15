@@ -1,3 +1,25 @@
+# Event Manager QA Onboarding
+
+<!-- portfolio-curation -->
+## Portfolio Overview
+Teaching project that introduces QA, onboarding, and software development practices through an event manager scenario.
+
+## What This Demonstrates
+- QA education
+- onboarding workflows
+- applied software assignments
+
+## Stack
+Python
+
+## Portfolio Status
+This repository is part of Keith Williams' curated public portfolio. The README has been updated to explain the project purpose, technical focus, and why the work is worth reviewing.
+<!-- /portfolio-curation -->
+
+---
+
+## Original Notes
+
 # Event Manager Company: Software QA Analyst/Developer Onboarding Assignment
 
 Welcome to the Event Manager Company! As a newly hired Software QA Analyst/Developer and a student in software engineering, you are embarking on an exciting journey to contribute to our project aimed at developing a secure, robust REST API that supports JWT token-based OAuth2 authentication. This API serves as the backbone of our user management system and will eventually expand to include features for event management and registration.
@@ -119,3 +141,4 @@ If you have any questions or need assistance, don't hesitate to reach out to you
 Once again, welcome to the Event Manager Company! Let's embark on this exciting journey together and create something remarkable.
 
 Happy coding and happy learning!
+
