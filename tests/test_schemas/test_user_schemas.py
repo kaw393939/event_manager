@@ -25,7 +25,7 @@ def test_user_update_valid(user_update_data):
 # Tests for UserResponse
 def test_user_response_valid(user_response_data):
     user = UserResponse(**user_response_data)
-    assert user.id == user_response_data["id"]
+    assert str(user.id) == user_response_data["id"]
     # assert user.last_login_at == user_response_data["last_login_at"]
 
 # Tests for LoginRequest
@@ -33,6 +33,17 @@ def test_login_request_valid(login_request_data):
     login = LoginRequest(**login_request_data)
     assert login.email == login_request_data["email"]
     assert login.password == login_request_data["password"]
+
+def test_login_request_example_values():
+    schema = LoginRequest.model_json_schema()
+    email_field = schema["properties"]["email"]
+    password_field = schema["properties"]["password"]
+
+    email_example = email_field.get("example") or (email_field.get("examples", [None])[0])
+    password_example = password_field.get("example") or (password_field.get("examples", [None])[0])
+
+    assert email_example == "john.doe@example.com"
+    assert password_example == "Secure*1234"
 
 # Parametrized tests for nickname and email validation
 @pytest.mark.parametrize("nickname", ["test_user", "test-user", "testuser123", "123test"])
