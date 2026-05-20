@@ -189,3 +189,27 @@ async def test_list_users_unauthorized(async_client, user_token):
         headers={"Authorization": f"Bearer {user_token}"}
     )
     assert response.status_code == 403  # Forbidden, as expected for regular user
+
+@pytest.mark.asyncio
+async def test_create_user_invalid_nickname(async_client, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    invalid_data = {
+        "email": "test@example.com",
+        "password": "Secure*1234",
+        "nickname": "admin"  # Reserved word
+    }
+    response = await async_client.post("/users/", json=invalid_data, headers=headers)
+    assert response.status_code == 422
+    assert "Nickname cannot be a reserved word" in response.json()["detail"][0]["msg"]
+
+@pytest.mark.asyncio
+async def test_create_user_too_long_nickname(async_client, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    invalid_data = {
+        "email": "test@example.com",
+        "password": "Secure*1234",
+        "nickname": "a" * 51  # Exceeds max length
+    }
+    response = await async_client.post("/users/", json=invalid_data, headers=headers)
+    assert response.status_code == 422
+    assert "String should have at most 50 characters" in response.json()["detail"][0]["msg"]
