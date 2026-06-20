@@ -218,6 +218,7 @@ def user_base_data():
         "username": "john_doe_123",
         "email": "john.doe@example.com",
         "full_name": "John Doe",
+        "nickname" : "manager_john",
         "bio": "I am a software engineer with over 5 years of experience.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
     }
@@ -242,6 +243,7 @@ def user_update_data():
     return {
         "email": "john.doe.new@example.com",
         "full_name": "John H. Doe",
+        "first_name" : "John",
         "bio": "I specialize in backend development with Python and Node.js.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
     }
@@ -249,7 +251,7 @@ def user_update_data():
 @pytest.fixture
 def user_response_data():
     return {
-        "id": "unique-id-string",
+        "id": uuid4(),
         "username": "testuser",
         "email": "test@example.com",
         "last_login_at": datetime.now(),
@@ -260,4 +262,16 @@ def user_response_data():
 
 @pytest.fixture
 def login_request_data():
-    return {"username": "john_doe_123", "password": "SecurePassword123!"}
+    return {"username": "john_doe_123","email":"john.doe.new@example.com", "password": "SecurePassword123!"}
+
+@pytest.fixture
+def user_token():
+    return create_access_token(data = {"sub":"john_doe","role":UserRole.AUTHENTICATED.value})
+
+@pytest.fixture
+def manager_token():
+    return create_access_token(data = {"sub":"manager_john","role":UserRole.MANAGER.value})
+
+@pytest.fixture
+def admin_token():
+    return create_access_token(data = {"sub":"admin","role":UserRole.ADMIN.value})

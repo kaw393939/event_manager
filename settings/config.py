@@ -1,7 +1,15 @@
+import os
 from builtins import bool, int, str
 from pathlib import Path
 from pydantic import  Field, AnyUrl, DirectoryPath
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
+
+load_dotenv()
+
+smtp_username = os.getenv("smtp_username")
+smtp_password = os.getenv("smtp_password")
+
 
 class Settings(BaseSettings):
     max_login_attempts: int = Field(default=3, description="Background color of QR codes")
@@ -38,8 +46,8 @@ class Settings(BaseSettings):
     # Email settings for Mailtrap
     smtp_server: str = Field(default='smtp.mailtrap.io', description="SMTP server for sending emails")
     smtp_port: int = Field(default=2525, description="SMTP port for sending emails")
-    smtp_username: str = Field(default='your-mailtrap-username', description="Username for SMTP server")
-    smtp_password: str = Field(default='your-mailtrap-password', description="Password for SMTP server")
+    smtp_username: str = Field(default=smtp_username, description="Username for SMTP server")
+    smtp_password: str = Field(default=smtp_password, description="Password for SMTP server")
 
 
     class Config:
