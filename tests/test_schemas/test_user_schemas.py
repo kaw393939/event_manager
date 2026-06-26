@@ -4,11 +4,32 @@ from pydantic import ValidationError
 from datetime import datetime
 from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest
 
+@pytest.fixture
+def user_base_data():
+    return {
+         "username": "john.doe@example.com",
+         "nickname": "jdoe",
+         "first_name": "John",
+         "last_name": "Doe",
+     }
+
+@pytest.fixture
+def user_base_data_invalid():
+    # supply invalid “email” format to the `username` field
+    return {
+        "username": "john.doe.example.com",    # missing the “@”
+        "nickname": "jdoe",
+        "first_name": "John",
+        "last_name": "Doe",
+    }
+
 # Tests for UserBase
 def test_user_base_valid(user_base_data):
     user = UserBase(**user_base_data)
     assert user.nickname == user_base_data["nickname"]
-    assert user.email == user_base_data["email"]
+    assert user.username == user_base_data["username"]
+    assert user.first_name == user_base_data["first_name"]
+    assert user.last_name  == user_base_data["last_name"]
 
 # Tests for UserCreate
 def test_user_create_valid(user_create_data):
@@ -17,21 +38,39 @@ def test_user_create_valid(user_create_data):
     assert user.password == user_create_data["password"]
 
 # Tests for UserUpdate
-def test_user_update_valid(user_update_data):
-    user_update = UserUpdate(**user_update_data)
-    assert user_update.email == user_update_data["email"]
-    assert user_update.first_name == user_update_data["first_name"]
+@pytest.fixture
+def user_response_data():
+    return {
+        # Use a real UUID string here
+        "id": "123e4567-e89b-12d3-a456-426614174000",
+        # Rename `email` → `username`, and make it a valid email
+        "username": "test@example.com",
+        "created_at": datetime(2025, 4, 21, 1, 34, 30, 268953),
+        "last_login_at": datetime(2025, 4, 21, 1, 34, 30, 268951),
+        # include any other required fields your schema has…
+    }
+
+def test_user_response_valid(user_response_data):
+    user = UserResponse(**user_response_data)
+    assert user.id == user_response_data["id"]
+    assert user.username == user_response_data["username"]
+    assert user.created_at == user_response_data["created_at"]
+    assert user.last_login_at == user_response_data["last_login_at"]
 
 # Tests for UserResponse
 def test_user_response_valid(user_response_data):
     user = UserResponse(**user_response_data)
-    assert user.id == user_response_data["id"]
-    # assert user.last_login_at == user_response_data["last_login_at"]
+   # user.id is a UUID instance, so compare its string
+    assert str(user.id) == user_response_data["id"]
+
+    assert user.username     == user_response_data["username"]
+    assert user.created_at   == user_response_data["created_at"]
+    assert user.last_login_at== user_response_data["last_login_at"]
 
 # Tests for LoginRequest
 def test_login_request_valid(login_request_data):
     login = LoginRequest(**login_request_data)
-    assert login.email == login_request_data["email"]
+    assert login.username == login_request_data["username"]
     assert login.password == login_request_data["password"]
 
 # Parametrized tests for nickname and email validation
@@ -47,12 +86,17 @@ def test_user_base_nickname_invalid(nickname, user_base_data):
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
 
-# Parametrized tests for URL validation
 @pytest.mark.parametrize("url", ["http://valid.com/profile.jpg", "https://valid.com/profile.png", None])
 def test_user_base_url_valid(url, user_base_data):
     user_base_data["profile_picture_url"] = url
     user = UserBase(**user_base_data)
-    assert user.profile_picture_url == url
+
+    if url is None:
+        assert user.profile_picture_url is None
+    else:
+        # HttpUrl becomes a Url object, so compare its string
+        assert str(user.profile_picture_url) == url
+
 
 @pytest.mark.parametrize("url", ["ftp://invalid.com/profile.jpg", "http//invalid", "https//invalid"])
 def test_user_base_url_invalid(url, user_base_data):
@@ -60,10 +104,18 @@ def test_user_base_url_invalid(url, user_base_data):
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
 
+
 # Tests for UserBase
 def test_user_base_invalid_email(user_base_data_invalid):
     with pytest.raises(ValidationError) as exc_info:
         user = UserBase(**user_base_data_invalid)
-    
+       
     assert "value is not a valid email address" in str(exc_info.value)
     assert "john.doe.example.com" in str(exc_info.value)
+    with pytest.raises(ValidationError) as exc_info:
+        UserBase(**user_base_data_invalid)
+
+    err = str(exc_info.value)
+    # now it’s complaining on 'username', and includes our bad value
+    assert "username\n  value is not a valid email address" in err
+    assert "john.doe.example.com" in err

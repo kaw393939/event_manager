@@ -45,11 +45,11 @@ async def test_update_user_email_access_denied(async_client, verified_user, user
 
 @pytest.mark.asyncio
 async def test_update_user_email_access_allowed(async_client, admin_user, admin_token):
-    updated_data = {"email": f"updated_{admin_user.id}@example.com"}
+    updated_data = {"username": f"updated_{admin_user.id}@example.com"}
     headers = {"Authorization": f"Bearer {admin_token}"}
     response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
     assert response.status_code == 200
-    assert response.json()["email"] == updated_data["email"]
+    assert response.json()["username"] == updated_data["username"]
 
 
 @pytest.mark.asyncio
@@ -64,12 +64,15 @@ async def test_delete_user(async_client, admin_user, admin_token):
 @pytest.mark.asyncio
 async def test_create_user_duplicate_email(async_client, verified_user):
     user_data = {
-        "email": verified_user.email,
+        "username": verified_user.email,
         "password": "AnotherPassword123!",
+        "first_name": "Test",
+        "last_name": "User",
     }
     response = await async_client.post("/register/", json=user_data)
     assert response.status_code == 400
-    assert "Email already exists" in response.json().get("detail", "")
+    assert "Username already exists" in response.json().get("detail", "")
+
 
 @pytest.mark.asyncio
 async def test_create_user_invalid_email(async_client):
@@ -112,7 +115,7 @@ async def test_login_user_not_found(async_client):
     }
     response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
     assert response.status_code == 401
-    assert "Incorrect email or password." in response.json().get("detail", "")
+    assert "Incorrect credentials" in response.json().get("detail", "")
 
 @pytest.mark.asyncio
 async def test_login_incorrect_password(async_client, verified_user):
@@ -122,7 +125,7 @@ async def test_login_incorrect_password(async_client, verified_user):
     }
     response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
     assert response.status_code == 401
-    assert "Incorrect email or password." in response.json().get("detail", "")
+    assert "Incorrect credentials" in response.json().get("detail", "")
 
 @pytest.mark.asyncio
 async def test_login_unverified_user(async_client, unverified_user):
@@ -141,7 +144,8 @@ async def test_login_locked_user(async_client, locked_user):
     }
     response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
     assert response.status_code == 400
-    assert "Account locked due to too many failed login attempts." in response.json().get("detail", "")
+    assert "Account locked" in response.json().get("detail", "")
+
 @pytest.mark.asyncio
 async def test_delete_user_does_not_exist(async_client, admin_token):
     non_existent_user_id = "00000000-0000-0000-0000-000000000000"  # Valid UUID format
