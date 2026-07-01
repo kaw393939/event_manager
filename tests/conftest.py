@@ -89,6 +89,16 @@ async def db_session(setup_database):
             yield session
         finally:
             await session.close()
+            
+@pytest.fixture
+async def user_token(async_client, user):
+    response = await async_client.post("/login/", data={
+        "username": user.email,
+        "password": "MySuperPassword$1234",        
+    })
+    
+    assert response.status_code == 200, f"user login failed: {response.json()}"
+    return response.json()["access_token"]
 
 @pytest.fixture(scope="function")
 async def locked_user(db_session):
@@ -196,6 +206,15 @@ async def admin_user(db_session: AsyncSession):
     return user
 
 @pytest.fixture
+async def admin_token(async_client, admin_user):
+    response = await async_client.post("/login/", data={
+        "username": admin_user.email,
+        "password": "securepassword",
+    })
+    assert response.status_code == 200, f"admin login failed: {response.json()}"
+    return response.json()["access_token"]
+
+@pytest.fixture
 async def manager_user(db_session: AsyncSession):
     user = User(
         nickname="manager_john",
@@ -210,6 +229,14 @@ async def manager_user(db_session: AsyncSession):
     await db_session.commit()
     return user
 
+@pytest.fixture
+async def manager_token(async_client, admin_user):
+    response = await async_client.post("/login/", data={
+        "username": manager_user.email,
+        "password": "securepassword",
+    })
+    assert response.status_code == 200, f"manager login failed: {response.json()}"
+    return response.json()["access_token"]
 
 # Fixtures for common test data
 @pytest.fixture
