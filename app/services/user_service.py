@@ -52,26 +52,41 @@ class UserService:
     @classmethod
     async def create(cls, session: AsyncSession, user_data: Dict[str, str], email_service: EmailService) -> Optional[User]:
         try:
+            # Validate incoming user data using the UserCreate schema.
             validated_data = UserCreate(**user_data).model_dump()
+
+            # Check if a user already exists with this email.
             existing_user = await cls.get_by_email(session, validated_data['email'])
             if existing_user:
                 logger.error("User with given email already exists.")
                 return None
+
+            # Hash the plaintext password.
             validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
+        
+            # Use provided nickname if available; otherwise, generate one.
+            nickname = validated_data.get("nickname")
+            if not nickname:
+                nickname = generate_nickname()
+            if not nickname:
+                raise ValueError("Failed to generate a valid nickname")
+        
+            # If uniqueness is not required, simply use the nickname.
+            validated_data["nickname"] = nickname
+
+            # Create the new user
             new_user = User(**validated_data)
             new_user.verification_token = generate_verification_token()
-            new_nickname = generate_nickname()
-            while await cls.get_by_nickname(session, new_nickname):
-                new_nickname = generate_nickname()
-            new_user.nickname = new_nickname
+
             session.add(new_user)
             await session.commit()
             await email_service.send_verification_email(new_user)
-            
             return new_user
+
         except ValidationError as e:
-            logger.error(f"Validation error during user creation: {e}")
-            return None
+                logger.error(f"Validation error during user creation: {e}")
+                return None
+
 
     @classmethod
     async def update(cls, session: AsyncSession, user_id: UUID, update_data: Dict[str, str]) -> Optional[User]:
@@ -117,27 +132,44 @@ class UserService:
     
 
     @classmethod
-    async def login_user(cls, session: AsyncSession, email: str, password: str) -> Optional[User]:
+    async def login_user(cls, session, email: str, password: str) -> Optional[User]:
+        # Retrieve user by email
         user = await cls.get_by_email(session, email)
-        if user:
-            if user.email_verified is False:
-                return None
-            if user.is_locked:
-                return None
-            if verify_password(password, user.hashed_password):
-                user.failed_login_attempts = 0
-                user.last_login_at = datetime.now(timezone.utc)
-                session.add(user)
-                await session.commit()
-                return user
-            else:
-                user.failed_login_attempts += 1
-                if user.failed_login_attempts >= settings.max_login_attempts:
-                    user.is_locked = True
-                session.add(user)
-                await session.commit()
-        return None
+        if not user:
+            logging.info("Login attempt failed: user %s not found", email)
+            return None
 
+        logging.info("User %s found for login attempt", email)
+        
+        # Check if user's email is verified
+        if user.email_verified is False:
+            logging.info("User %s has not verified their email", email)
+            return None
+        
+        # Check if account is locked
+        if user.is_locked:
+            logging.info("User %s account is locked", email)
+            return None
+
+        # Verify password
+        if verify_password(password, user.hashed_password):
+            logging.info("Password verification successful for user %s", email)
+            # Reset failed login attempts and update last login timestamp
+            user.failed_login_attempts = 0
+            user.last_login_at = datetime.now(timezone.utc)
+            session.add(user)
+            await session.commit()
+            return user
+        else:
+            logging.info("Password verification failed for user %s", email)
+            # Increment failed attempts
+            user.failed_login_attempts += 1
+            if user.failed_login_attempts >= settings.max_login_attempts:
+                user.is_locked = True
+                logging.info("User %s has been locked due to too many failed attempts", email)
+            session.add(user)
+            await session.commit()
+            return None
     @classmethod
     async def is_account_locked(cls, session: AsyncSession, email: str) -> bool:
         user = await cls.get_by_email(session, email)

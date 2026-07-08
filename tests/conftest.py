@@ -1,22 +1,19 @@
 """
-File: test_database_operations.py
+conftest.py
 
-Overview:
-This Python test file utilizes pytest to manage database states and HTTP clients for testing a web application built with FastAPI and SQLAlchemy. It includes detailed fixtures to mock the testing environment, ensuring each test is run in isolation with a consistent setup.
-
-Fixtures:
-- `async_client`: Manages an asynchronous HTTP client for testing interactions with the FastAPI application.
-- `db_session`: Handles database transactions to ensure a clean database state for each test.
-- User fixtures (`user`, `locked_user`, `verified_user`, etc.): Set up various user states to test different behaviors under diverse conditions.
-- `token`: Generates an authentication token for testing secured endpoints.
-- `initialize_database`: Prepares the database at the session start.
-- `setup_database`: Sets up and tears down the database before and after each test.
+This file sets up the test environment for your FastAPI and SQLAlchemy application.
+It provides fixtures for:
+  - Database initialization and teardown.
+  - An asynchronous HTTP client.
+  - Various user fixtures.
+  - JWT token generation (with role information).
+  - SMTP patching to prevent actual email sending.
+  - Common test data.
 """
 
 # Standard library imports
-from builtins import range
+from builtins import str
 from datetime import datetime
-from unittest.mock import patch
 from uuid import uuid4
 
 # Third-party imports
@@ -37,33 +34,54 @@ from app.utils.template_manager import TemplateManager
 from app.services.email_service import EmailService
 from app.services.jwt_service import create_access_token
 
+# Create a Faker instance
 fake = Faker()
 
+# Retrieve settings and setup database URL and engine
 settings = get_settings()
 TEST_DATABASE_URL = settings.database_url.replace("postgresql://", "postgresql+asyncpg://")
 engine = create_async_engine(TEST_DATABASE_URL, echo=settings.debug)
 AsyncTestingSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 AsyncSessionScoped = scoped_session(AsyncTestingSessionLocal)
 
+# ---------------------------
+# Patch SMTP to avoid external calls in tests.
+# ---------------------------
+@pytest.fixture(autouse=True)
+def patch_smtp(monkeypatch):
+    from app.utils.smtp_connection import SMTPClient
 
+    def fake_send_email(self, subject, html_content, recipient):
+        # Log or print to indicate this function was called.
+        print(f"[FAKE SMTP] send_email called with subject: '{subject}', recipient: '{recipient}'")
+        return
+
+    monkeypatch.setattr(SMTPClient, "send_email", fake_send_email)
+
+# ---------------------------
+# Email Service Fixture
+# ---------------------------
 @pytest.fixture
 def email_service():
-    # Assuming the TemplateManager does not need any arguments for initialization
     template_manager = TemplateManager()
-    email_service = EmailService(template_manager=template_manager)
-    return email_service
+    return EmailService(template_manager=template_manager)
 
-
-# this is what creates the http client for your api tests
+# ---------------------------
+# Async HTTP Client Fixture
+# ---------------------------
 @pytest.fixture(scope="function")
 async def async_client(db_session):
+    # Override dependency to use test DB session
+    app.dependency_overrides[get_db] = lambda: db_session
     async with AsyncClient(app=app, base_url="http://testserver") as client:
-        app.dependency_overrides[get_db] = lambda: db_session
         try:
             yield client
         finally:
             app.dependency_overrides.clear()
 
+# ---------------------------
+# Database Initialization and Setup
+# ---------------------------
 @pytest.fixture(scope="session", autouse=True)
 def initialize_database():
     try:
@@ -71,15 +89,13 @@ def initialize_database():
     except Exception as e:
         pytest.fail(f"Failed to initialize the database: {str(e)}")
 
-# this function setup and tears down (drops tales) for each test function, so you have a clean database for each test.
 @pytest.fixture(scope="function", autouse=True)
 async def setup_database():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
     async with engine.begin() as conn:
-        # you can comment out this line during development if you are debugging a single test
-         await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
 
 @pytest.fixture(scope="function")
@@ -90,10 +106,47 @@ async def db_session(setup_database):
         finally:
             await session.close()
 
+# ---------------------------
+# User Fixtures
+# ---------------------------
+@pytest.fixture(scope="function")
+async def user(db_session):
+    data = {
+        "nickname": fake.user_name(),
+        "first_name": fake.first_name(),
+        "last_name": fake.last_name(),
+        "email": fake.email(),
+        "hashed_password": hash_password("MySuperPassword$1234"),
+        "role": UserRole.AUTHENTICATED,
+        "email_verified": False,
+        "is_locked": False,
+    }
+    user_obj = User(**data)
+    db_session.add(user_obj)
+    await db_session.commit()
+    return user_obj
+
+@pytest.fixture(scope="function")
+async def verified_user(db_session):
+    data = {
+        "nickname": fake.user_name(),
+        "first_name": fake.first_name(),
+        "last_name": fake.last_name(),
+        "email": fake.email(),
+        "hashed_password": hash_password("MySuperPassword$1234"),
+        "role": UserRole.AUTHENTICATED,
+        "email_verified": True,
+        "is_locked": False,
+    }
+    user_obj = User(**data)
+    db_session.add(user_obj)
+    await db_session.commit()
+    return user_obj
+
 @pytest.fixture(scope="function")
 async def locked_user(db_session):
     unique_email = fake.email()
-    user_data = {
+    data = {
         "nickname": fake.user_name(),
         "first_name": fake.first_name(),
         "last_name": fake.last_name(),
@@ -104,67 +157,46 @@ async def locked_user(db_session):
         "is_locked": True,
         "failed_login_attempts": settings.max_login_attempts,
     }
-    user = User(**user_data)
-    db_session.add(user)
+    user_obj = User(**data)
+    db_session.add(user_obj)
     await db_session.commit()
-    return user
+    return user_obj
 
 @pytest.fixture(scope="function")
-async def user(db_session):
-    user_data = {
-        "nickname": fake.user_name(),
-        "first_name": fake.first_name(),
-        "last_name": fake.last_name(),
-        "email": fake.email(),
-        "hashed_password": hash_password("MySuperPassword$1234"),
-        "role": UserRole.AUTHENTICATED,
-        "email_verified": False,
-        "is_locked": False,
-    }
-    user = User(**user_data)
-    db_session.add(user)
+async def admin_user(db_session: AsyncSession):
+    user_obj = User(
+        nickname="admin_user",
+        email="admin@example.com",
+        first_name="Admin",
+        last_name="User",
+        hashed_password="securepassword",
+        role=UserRole.ADMIN,
+        is_locked=False,
+    )
+    db_session.add(user_obj)
     await db_session.commit()
-    return user
+    return user_obj
 
 @pytest.fixture(scope="function")
-async def verified_user(db_session):
-    user_data = {
-        "nickname": fake.user_name(),
-        "first_name": fake.first_name(),
-        "last_name": fake.last_name(),
-        "email": fake.email(),
-        "hashed_password": hash_password("MySuperPassword$1234"),
-        "role": UserRole.AUTHENTICATED,
-        "email_verified": True,
-        "is_locked": False,
-    }
-    user = User(**user_data)
-    db_session.add(user)
+async def manager_user(db_session: AsyncSession):
+    user_obj = User(
+        nickname="manager_john",
+        first_name="Manager",
+        last_name="User",
+        email="manager_user@example.com",
+        hashed_password="securepassword",
+        role=UserRole.MANAGER,
+        is_locked=False,
+    )
+    db_session.add(user_obj)
     await db_session.commit()
-    return user
-
-@pytest.fixture(scope="function")
-async def unverified_user(db_session):
-    user_data = {
-        "nickname": fake.user_name(),
-        "first_name": fake.first_name(),
-        "last_name": fake.last_name(),
-        "email": fake.email(),
-        "hashed_password": hash_password("MySuperPassword$1234"),
-        "role": UserRole.AUTHENTICATED,
-        "email_verified": False,
-        "is_locked": False,
-    }
-    user = User(**user_data)
-    db_session.add(user)
-    await db_session.commit()
-    return user
+    return user_obj
 
 @pytest.fixture(scope="function")
 async def users_with_same_role_50_users(db_session):
     users = []
     for _ in range(50):
-        user_data = {
+        data = {
             "nickname": fake.user_name(),
             "first_name": fake.first_name(),
             "last_name": fake.last_name(),
@@ -174,50 +206,39 @@ async def users_with_same_role_50_users(db_session):
             "email_verified": False,
             "is_locked": False,
         }
-        user = User(**user_data)
-        db_session.add(user)
-        users.append(user)
+        user_obj = User(**data)
+        db_session.add(user_obj)
+        users.append(user_obj)
     await db_session.commit()
     return users
 
+# ---------------------------
+# Token Fixtures
+# ---------------------------
+# The create_access_token function now requires a keyword argument 'data'.
+# We include both the user ID and the role in the payload.
 @pytest.fixture
-async def admin_user(db_session: AsyncSession):
-    user = User(
-        nickname="admin_user",
-        email="admin@example.com",
-        first_name="John",
-        last_name="Doe",
-        hashed_password="securepassword",
-        role=UserRole.ADMIN,
-        is_locked=False,
-    )
-    db_session.add(user)
-    await db_session.commit()
-    return user
+def user_token(user):
+    return create_access_token(data={"sub": str(user.id), "role": user.role})
 
 @pytest.fixture
-async def manager_user(db_session: AsyncSession):
-    user = User(
-        nickname="manager_john",
-        first_name="John",
-        last_name="Doe",
-        email="manager_user@example.com",
-        hashed_password="securepassword",
-        role=UserRole.MANAGER,
-        is_locked=False,
-    )
-    db_session.add(user)
-    await db_session.commit()
-    return user
+def admin_token(admin_user):
+    return create_access_token(data={"sub": str(admin_user.id), "role": admin_user.role})
 
+@pytest.fixture
+def manager_token(manager_user):
+    return create_access_token(data={"sub": str(manager_user.id), "role": manager_user.role})
 
-# Fixtures for common test data
+# ---------------------------
+# Common Test Data Fixtures
+# ---------------------------
 @pytest.fixture
 def user_base_data():
     return {
-        "username": "john_doe_123",
+        "nickname": "john_doe_123",
         "email": "john.doe@example.com",
-        "full_name": "John Doe",
+        "first_name": "John",
+        "last_name": "Doe",
         "bio": "I am a software engineer with over 5 years of experience.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
     }
@@ -225,13 +246,13 @@ def user_base_data():
 @pytest.fixture
 def user_base_data_invalid():
     return {
-        "username": "john_doe_123",
-        "email": "john.doe.example.com",
-        "full_name": "John Doe",
+        "nickname": "john_doe_123",
+        "email": "john.doe.example.com",  # invalid email format
+        "first_name": "John",
+        "last_name": "Doe",
         "bio": "I am a software engineer with over 5 years of experience.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
     }
-
 
 @pytest.fixture
 def user_create_data(user_base_data):
@@ -241,7 +262,8 @@ def user_create_data(user_base_data):
 def user_update_data():
     return {
         "email": "john.doe.new@example.com",
-        "full_name": "John H. Doe",
+        "first_name": "John",
+        "last_name": "Doe",
         "bio": "I specialize in backend development with Python and Node.js.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
     }
@@ -249,8 +271,8 @@ def user_update_data():
 @pytest.fixture
 def user_response_data():
     return {
-        "id": "unique-id-string",
-        "username": "testuser",
+        "id": "123e4567-e89b-12d3-a456-426614174000",  # valid UUID format
+        "nickname": "testuser",
         "email": "test@example.com",
         "last_login_at": datetime.now(),
         "created_at": datetime.now(),
@@ -260,4 +282,22 @@ def user_response_data():
 
 @pytest.fixture
 def login_request_data():
-    return {"username": "john_doe_123", "password": "SecurePassword123!"}
+    return {"email": "john_doe@example.com", "password": "SecurePassword123!"}
+
+@pytest.fixture(scope="function")
+async def unverified_user(user):
+    # The "user" fixture already creates a user with email_verified=False.
+    # This alias makes unverified_user available for tests.
+    return user
+
+
+@pytest.fixture(autouse=True)
+def patch_smtp(monkeypatch):
+    from app.utils.smtp_connection import SMTPClient
+
+    def fake_send_email(self, subject, html_content, recipient):
+        # Log that a fake email send was attempted.
+        print(f"[FAKE SMTP] Email would be sent with subject: {subject}, recipient: {recipient}")
+        return
+
+    monkeypatch.setattr(SMTPClient, "send_email", fake_send_email)

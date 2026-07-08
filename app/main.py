@@ -5,6 +5,9 @@ from app.database import Database
 from app.dependencies import get_settings
 from app.routers import user_routes
 from app.utils.api_description import getDescription
+import logging
+
+logger = logging.getLogger("uvicorn.error")
 app = FastAPI(
     title="User Management",
     description=getDescription(),
@@ -24,7 +27,11 @@ async def startup_event():
 
 @app.exception_handler(Exception)
 async def exception_handler(request, exc):
-    return JSONResponse(status_code=500, content={"message": "An unexpected error occurred."})
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"message": f"An unexpected error occurred: {str(exc)}"}
+    )
 
 app.include_router(user_routes.router)
 

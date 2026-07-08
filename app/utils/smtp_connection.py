@@ -1,4 +1,3 @@
-# smtp_client.py
 from builtins import Exception, int, str
 import smtplib
 from email.mime.text import MIMEText
@@ -20,12 +19,25 @@ class SMTPClient:
             message['From'] = self.username
             message['To'] = recipient
             message.attach(MIMEText(html_content, 'html'))
-
-            with smtplib.SMTP(self.server, self.port) as server:
-                server.starttls()  # Use TLS
+            
+            # Create SMTP connection with a timeout (e.g., 10 seconds)
+            with smtplib.SMTP(self.server, self.port, timeout=10) as server:
+                logging.info("Connected to SMTP server")
+                
+                # Start TLS to secure the connection
+                logging.info("Starting TLS...")
+                server.starttls()
+                logging.info("TLS established")
+                
+                # Log in using SMTP credentials
+                logging.info("Logging into SMTP server...")
                 server.login(self.username, self.password)
+                logging.info("Logged in successfully")
+                
+                # Send the email
+                logging.info("Sending email...")
                 server.sendmail(self.username, recipient, message.as_string())
-            logging.info(f"Email sent to {recipient}")
+                logging.info(f"Email sent to {recipient}")
         except Exception as e:
             logging.error(f"Failed to send email: {str(e)}")
             raise
