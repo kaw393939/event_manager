@@ -67,3 +67,15 @@ def test_user_base_invalid_email(user_base_data_invalid):
     
     assert "value is not a valid email address" in str(exc_info.value)
     assert "john.doe.example.com" in str(exc_info.value)
+
+@pytest.mark.parametrize("invalid_email", [
+    "invalidemail.com",   # Missing '@'
+    "invalid@domain",     # Missing top-level domain
+    "@example.com",       # Missing username part
+    "user@.com",          # Invalid domain
+    "user@domain,com"     # Comma instead of dot in domain
+])
+def test_invalid_email_validation(invalid_email):
+    # Attempt to create LoginRequest with an invalid email
+    with pytest.raises(ValidationError):
+        LoginRequest(email=invalid_email, password="Secure*1234")
