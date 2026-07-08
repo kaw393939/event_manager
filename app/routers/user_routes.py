@@ -80,17 +80,12 @@ async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(g
 
 @router.put("/users/{user_id}", response_model=UserResponse, name="update_user", tags=["User Management Requires (Admin or Manager Roles)"])
 async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
-    """
-    Update user information.
-
-    - **user_id**: UUID of the user to update.
-    - **user_update**: UserUpdate model with updated user information.
-    """
     user_data = user_update.model_dump(exclude_unset=True)
+    if not user_data:
+        raise HTTPException(status_code=400, detail="No fields provided for update")
     updated_user = await UserService.update(db, user_id, user_data)
     if not updated_user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
+        raise HTTPException(status_code=404, detail="User not found")
     return UserResponse.model_construct(
         id=updated_user.id,
         bio=updated_user.bio,
