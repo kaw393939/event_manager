@@ -158,8 +158,8 @@ class UserService:
         return False
 
     @classmethod
-    async def verify_email_with_token(cls, session: AsyncSession, user_id: UUID, token: str) -> bool:
-        user = await cls.get_by_id(session, user_id)
+    async def verify_email_with_token(cls, session: AsyncSession, email: str, token: str) -> bool:
+        user = await cls.get_by_email(session, email)
         if user and user.verification_token == token:
             user.email_verified = True
             user.verification_token = None  # Clear the token once used

@@ -147,7 +147,7 @@ async def test_verify_email_with_token(db_session, user):
     token = "valid_token_example"  # This should be set in your user setup if it depends on a real token
     user.verification_token = token  # Simulating setting the token in the database
     await db_session.commit()
-    result = await UserService.verify_email_with_token(db_session, user.id, token)
+    result = await UserService.verify_email_with_token(db_session, user.email, token)
     assert result is True
 
 # Test unlocking a user's account
