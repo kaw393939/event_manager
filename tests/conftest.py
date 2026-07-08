@@ -48,17 +48,28 @@ AsyncSessionScoped = scoped_session(AsyncTestingSessionLocal)
 
 @pytest.fixture
 def email_service():
-    # Assuming the TemplateManager does not need any arguments for initialization
-    template_manager = TemplateManager()
-    email_service = EmailService(template_manager=template_manager)
-    return email_service
+    class MockEmailService:
+        async def send_email(self, *args, **kwargs):
+            return True
+            
+        async def send_verification_email(self, user):
+            return True
+            
+        async def send_password_reset_email(self, *args, **kwargs):
+            return True
+            
+        async def send_user_email(self, user_data, email_type):
+            return True
+
+    return MockEmailService()
 
 
 # this is what creates the http client for your api tests
 @pytest.fixture(scope="function")
-async def async_client(db_session):
+async def async_client(db_session, email_service):
     async with AsyncClient(app=app, base_url="http://testserver") as client:
         app.dependency_overrides[get_db] = lambda: db_session
+        app.dependency_overrides[EmailService] = lambda: email_service
         try:
             yield client
         finally:
@@ -215,9 +226,10 @@ async def manager_user(db_session: AsyncSession):
 @pytest.fixture
 def user_base_data():
     return {
-        "username": "john_doe_123",
+        "nickname": "john_doe_123",
         "email": "john.doe@example.com",
-        "full_name": "John Doe",
+        "first_name": "John",
+        "last_name": "Doe",
         "bio": "I am a software engineer with over 5 years of experience.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
     }
@@ -225,13 +237,13 @@ def user_base_data():
 @pytest.fixture
 def user_base_data_invalid():
     return {
-        "username": "john_doe_123",
+        "nickname": "john_doe_123",
         "email": "john.doe.example.com",
-        "full_name": "John Doe",
+        "first_name": "John",
+        "last_name": "Doe",
         "bio": "I am a software engineer with over 5 years of experience.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
     }
-
 
 @pytest.fixture
 def user_create_data(user_base_data):
@@ -241,7 +253,8 @@ def user_create_data(user_base_data):
 def user_update_data():
     return {
         "email": "john.doe.new@example.com",
-        "full_name": "John H. Doe",
+        "first_name": "John",
+        "last_name": "H. Doe",
         "bio": "I specialize in backend development with Python and Node.js.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
     }
@@ -249,15 +262,38 @@ def user_update_data():
 @pytest.fixture
 def user_response_data():
     return {
-        "id": "unique-id-string",
-        "username": "testuser",
-        "email": "test@example.com",
-        "last_login_at": datetime.now(),
-        "created_at": datetime.now(),
-        "updated_at": datetime.now(),
-        "links": []
+        "id": uuid4(),
+        "email": "john.doe@example.com",
+        "nickname": "john_doe_123",
+        "first_name": "John",
+        "last_name": "Doe",
+        "bio": "I am a software engineer with over 5 years of experience.",
+        "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg",
+        "role": "AUTHENTICATED",
+        "is_professional": False
     }
 
 @pytest.fixture
 def login_request_data():
-    return {"username": "john_doe_123", "password": "SecurePassword123!"}
+    return {
+        "email": "john.doe@example.com",
+        "password": "SecurePassword123!"
+    }
+
+@pytest.fixture
+def user_token(user):
+    return create_access_token(
+        data={"sub": str(user.id), "role": user.role.value}
+    )
+
+@pytest.fixture
+def admin_token(admin_user):
+    return create_access_token(
+        data={"sub": str(admin_user.id), "role": admin_user.role.value}
+    )
+
+@pytest.fixture
+def manager_token(manager_user):
+    return create_access_token(
+        data={"sub": str(manager_user.id), "role": manager_user.role.value}
+    )

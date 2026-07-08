@@ -151,7 +151,7 @@ async def test_delete_user_does_not_exist(async_client, admin_token):
 
 @pytest.mark.asyncio
 async def test_update_user_github(async_client, admin_user, admin_token):
-    updated_data = {"github_profile_url": "http://www.github.com/kaw393939"}
+    updated_data = {"github_profile_url": "http://www.github.com/rahul7381"}
     headers = {"Authorization": f"Bearer {admin_token}"}
     response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
     assert response.status_code == 200
@@ -159,7 +159,7 @@ async def test_update_user_github(async_client, admin_user, admin_token):
 
 @pytest.mark.asyncio
 async def test_update_user_linkedin(async_client, admin_user, admin_token):
-    updated_data = {"linkedin_profile_url": "http://www.linkedin.com/kaw393939"}
+    updated_data = {"linkedin_profile_url": "http://www.linkedin.com/rahul7381"}
     headers = {"Authorization": f"Bearer {admin_token}"}
     response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
     assert response.status_code == 200
@@ -189,3 +189,72 @@ async def test_list_users_unauthorized(async_client, user_token):
         headers={"Authorization": f"Bearer {user_token}"}
     )
     assert response.status_code == 403  # Forbidden, as expected for regular user
+
+@pytest.mark.asyncio
+async def test_update_multiple_profile_fields(async_client, admin_user, admin_token):
+    updated_data = {
+        "bio": "New bio",
+        "profile_picture_url": "https://example.com/new.jpg",
+        "github_profile_url": "https://github.com/newprofile",
+        "linkedin_profile_url": "https://linkedin.com/in/newprofile"
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["bio"] == updated_data["bio"]
+    assert data["profile_picture_url"] == updated_data["profile_picture_url"]
+    assert data["github_profile_url"] == updated_data["github_profile_url"]
+    assert data["linkedin_profile_url"] == updated_data["linkedin_profile_url"]
+
+@pytest.mark.asyncio
+async def test_update_empty_fields(async_client, admin_user, admin_token):
+    updated_data = {
+        "bio": "",
+        "profile_picture_url": None,
+        "github_profile_url": None,
+        "linkedin_profile_url": None
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["bio"] == ""
+    assert data["profile_picture_url"] is None
+    assert data["github_profile_url"] is None
+    assert data["linkedin_profile_url"] is None
+
+@pytest.mark.asyncio
+async def test_update_invalid_urls(async_client, admin_user, admin_token):
+    updated_data = {
+        "profile_picture_url": "not-a-url",
+        "github_profile_url": "ftp://invalid.com",
+        "linkedin_profile_url": "http//invalid"
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 422  # Validation error
+
+@pytest.mark.asyncio
+async def test_update_partial_fields(async_client, admin_user, admin_token):
+    # Test updating just bio
+    updated_data = {"bio": "New bio only"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["bio"] == updated_data["bio"]
+    
+    # Test updating just profile picture
+    updated_data = {"profile_picture_url": "https://example.com/new-pic.jpg"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["profile_picture_url"] == updated_data["profile_picture_url"]
+
+@pytest.mark.asyncio
+async def test_update_no_fields(async_client, admin_user, admin_token):
+    updated_data = {}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 422  # Validation error - at least one field required
