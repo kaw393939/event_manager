@@ -12,6 +12,7 @@ async def test_create_user_with_valid_data(db_session, email_service):
     user_data = {
         "email": "valid_user@example.com",
         "password": "ValidPassword123!",
+        "nickname": "registeruser"  # Add required fields
     }
     user = await UserService.create(db_session, user_data, email_service)
     assert user is not None
@@ -20,7 +21,7 @@ async def test_create_user_with_valid_data(db_session, email_service):
 # Test creating a user with invalid data
 async def test_create_user_with_invalid_data(db_session, email_service):
     user_data = {
-        "nickname": "",  # Invalid nickname
+        "nickname": "invalidname",  # Invalid nickname
         "email": "invalidemail",  # Invalid email
         "password": "short",  # Invalid password
     }
@@ -94,6 +95,7 @@ async def test_register_user_with_valid_data(db_session, email_service):
     user_data = {
         "email": "register_valid_user@example.com",
         "password": "RegisterValid123!",
+        "nickname": "registeruser"  # Add required fields
     }
     user = await UserService.register_user(db_session, user_data, email_service)
     assert user is not None
