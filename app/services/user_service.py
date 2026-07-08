@@ -60,10 +60,24 @@ class UserService:
             validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             new_user = User(**validated_data)
             new_user.verification_token = generate_verification_token()
-            new_nickname = generate_nickname()
-            while await cls.get_by_nickname(session, new_nickname):
+            # Fixing issue #1
+            # If the nickname is not provided, generate a new one until it's unique
+            # If nickname is already taken, generate a new one until it's unique
+            # new_nickname = generate_nickname()
+            # while await cls.get_by_nickname(session, new_nickname):
+            #     new_nickname = generate_nickname()
+            # new_user.nickname = new_nickname
+            if 'nickname' in user_data:
+                if await cls.get_by_nickname(session, user_data['nickname']):
+                    logger.error("Nickname already taken.")
+                    return None
+                new_user.nickname = user_data['nickname']
+            else:
                 new_nickname = generate_nickname()
-            new_user.nickname = new_nickname
+                while await cls.get_by_nickname(session, new_nickname):
+                    new_nickname = generate_nickname()
+                new_user.nickname = new_nickname
+                
             session.add(new_user)
             await session.commit()
             await email_service.send_verification_email(new_user)
