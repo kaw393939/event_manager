@@ -67,3 +67,11 @@ def test_user_base_invalid_email(user_base_data_invalid):
     
     assert "value is not a valid email address" in str(exc_info.value)
     assert "john.doe.example.com" in str(exc_info.value)
+
+
+def test_user_create_and_login_example_match():
+    user_create_schema = UserCreate.schema()
+    login_schema = LoginRequest.schema()
+    
+    assert user_create_schema['properties']['email']['example'] == login_schema['properties']['email']['example']
+    assert user_create_schema['properties']['password']['example'] == login_schema['properties']['password']['example']
