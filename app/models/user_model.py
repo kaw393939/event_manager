@@ -95,3 +95,4 @@ class User(Base):
         """Updates the professional status and logs the update time."""
         self.is_professional = status
         self.professional_status_updated_at = func.now()
+        
