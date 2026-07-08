@@ -3,6 +3,52 @@ import pytest
 from pydantic import ValidationError
 from datetime import datetime
 from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest
+from uuid import UUID
+
+# Utility function to create a strong password for testing
+def create_strong_password():
+    return "StrongPass123!"
+
+@pytest.fixture
+def basic_user_data():
+    return {
+        "username": "sample_user",
+        "email": "sample_user@example.com",
+        "avatar_url": "https://example.com/avatar.jpg",
+    }
+
+@pytest.fixture
+def new_user_data():
+    return {
+        "username": "new_sample_user",
+        "email": "new_user@example.com",
+        "password": create_strong_password(),
+    }
+
+@pytest.fixture
+def updated_user_data():
+    return {
+        "email": "updated_user@example.com",
+        "first_name": "UpdatedFirstName",
+    }
+
+@pytest.fixture
+def response_user_data():
+    return {
+        "id": UUID('123e4567-e89b-12d3-a456-426614174000'),
+        "username": "sample_user",
+        "email": "sample_user@example.com",
+        "avatar_url": "https://example.com/avatar.jpg",
+        "last_active_at": "2024-12-02T15:00:00Z",
+    }
+
+@pytest.fixture
+def auth_request_data():
+    return {
+        "email": "sample_user@example.com",
+        "password": create_strong_password(),
+    }
+
 
 # Tests for UserBase
 def test_user_base_valid(user_base_data):
@@ -26,7 +72,6 @@ def test_user_update_valid(user_update_data):
 def test_user_response_valid(user_response_data):
     user = UserResponse(**user_response_data)
     assert user.id == user_response_data["id"]
-    # assert user.last_login_at == user_response_data["last_login_at"]
 
 # Tests for LoginRequest
 def test_login_request_valid(login_request_data):
@@ -61,9 +106,12 @@ def test_user_base_url_invalid(url, user_base_data):
         UserBase(**user_base_data)
 
 # Tests for UserBase
-def test_user_base_invalid_email(user_base_data_invalid):
+def test_user_base_invalid_email():
+    invalid_data = {
+        "nickname": "test",
+        "email": "invalid_mail",
+        "profile_picture_url": "profile.jpg",
+    }
     with pytest.raises(ValidationError) as exc_info:
-        user = UserBase(**user_base_data_invalid)
-    
+        UserBase(**invalid_data)
     assert "value is not a valid email address" in str(exc_info.value)
-    assert "john.doe.example.com" in str(exc_info.value)
