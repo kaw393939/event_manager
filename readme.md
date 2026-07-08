@@ -24,6 +24,67 @@ This repository is part of Keith Williams' curated public portfolio. The README 
 
 Welcome to the Event Manager Company! As a newly hired Software QA Analyst/Developer and a student in software engineering, you are embarking on an exciting journey to contribute to our project aimed at developing a secure, robust REST API that supports JWT token-based OAuth2 authentication. This API serves as the backbone of our user management system and will eventually expand to include features for event management and registration.
 
+## Experience with the Homework
+
+  - While doing this homework I gained the knowledge about how REST API works and how should we troubleshoot issues by debugging through the code. One of the challenges i faced was with the JWT token and SMTP server connection, which required a bit of prior knowledge how authentication works and things like improving the error handling for email validation url validation was a good learning on how the validation should be done. These helped me to understand how the secure management system works.
+
+  - Writing tests to increase pytest coverage while degugging the test cases that were failing have improved my problem-solving skills and changed the perspective of going through and troubleshooting an issue. It helped me in gaining knowledge about how important the code quality and collabarative development is to a team of developers and QA analysts.
+
+
+## Link to the Docker hub Repository:
+[event_manager - Docker Hub Link](https://hub.docker.com/r/sharonekula/event_manager/tags)
+
+## Link to the Issues :
+
+**1. [SMTP ERROR - Server Disconnected #1](https://github.com/sharonekula/event_manager_homework_10/issues/1)**
+
+When I ran the pytest after setting up the application the first issue i faced is the SMTP Server Disconnected Error with the below error on the test cases.
+
+```bash
+smtplib.SMTPServerDisconnected: Connection unexpectedly closed.
+```
+
+**2. [KeyErrors on nickname and firstname #2](https://github.com/sharonekula/event_manager_homework_10/issues/2)**
+
+Pytest test cases are failing on the keyerrors like nickname and first_name may be those are not correctly passed to the request data to be parsed by the method.
+
+```bash
+FAILED tests/test_schemas/test_user_schemas.py::test_user_base_valid - KeyError: 'nickname'
+FAILED tests/test_schemas/test_user_schemas.py::test_user_create_valid - KeyError: 'nickname'
+FAILED tests/test_schemas/test_user_schemas.py::test_user_update_valid - KeyError: 'first_name'
+```
+
+**3. [Pydantic validations for UserResponse api #3](https://github.com/sharonekula/event_manager_homework_10/issues/3)**
+
+The Pytest was throwing an error on the above API stating that the uuid was not parsed correctly with the below error.
+
+```bash
+pydantic_core._pydantic_core.ValidationError: 1 validation error for UserResponse
+id
+Input should be a valid UUID, invalid character: expected an optional prefix of urn:uuid: followed by [0-9a-fA-F-], found u at 1 [type=uuid_parsing, input_value='unique-id-string', input_type=str]
+For further information visit https://errors.pydantic.dev/2.6/v/uuid_parsing
+```
+
+**4. [Token Generation issues #4](https://github.com/sharonekula/event_manager_homework_10/issues/4)**
+
+There is token authentication issues where the tokens are not generated correctly on the userroles like admin manager and user.
+This is causing multiple test cases to fail stating that the required token is missing.
+
+**5. [Pydantic validation error on email for LoginRequest](https://github.com/sharonekula/event_manager_homework_10/issues/5)**
+
+We are facing test case failure on the Login Request with the below error stating the email is missing.
+
+Below is the error:
+```bash
+pydantic_core._pydantic_core.ValidationError: 1 validation error for LoginRequest
+email
+Field required [type=missing, input_value={'username': 'john_doe_12...': 'SecurePassword123!'}, input_type=dict]
+For further information visit https://errors.pydantic.dev/2.6/v/missing
+tests/test_schemas/test_user_schemas.py:33: ValidationError
+```
+ **6. Email Validation**
+Additionally I have worked on the email validation using validate_email method. I have used the email regex `r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$` to validate the email and used the validator code in all the requests where the test cases are being generated.
+
 ## Assignment Objectives
 
 1. **Familiarize with REST API functionality and structure**: Gain hands-on experience working with a REST API, understanding its endpoints, request/response formats, and authentication mechanisms.
