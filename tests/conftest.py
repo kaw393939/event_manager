@@ -187,9 +187,10 @@ async def admin_user(db_session: AsyncSession):
         email="admin@example.com",
         first_name="John",
         last_name="Doe",
-        hashed_password="securepassword",
+        hashed_password=hash_password("securepassword"),  # ✅ fix here
         role=UserRole.ADMIN,
         is_locked=False,
+        email_verified=True  # ✅ Optional, if login requires verification
     )
     db_session.add(user)
     await db_session.commit()
@@ -202,9 +203,10 @@ async def manager_user(db_session: AsyncSession):
         first_name="John",
         last_name="Doe",
         email="manager_user@example.com",
-        hashed_password="securepassword",
+        hashed_password=hash_password("securepassword"),  # ✅ fix here
         role=UserRole.MANAGER,
         is_locked=False,
+        email_verified=True
     )
     db_session.add(user)
     await db_session.commit()
@@ -215,9 +217,10 @@ async def manager_user(db_session: AsyncSession):
 @pytest.fixture
 def user_base_data():
     return {
-        "username": "john_doe_123",
+        "nickname": "john_doe_123",  # ✅ Add this
         "email": "john.doe@example.com",
-        "full_name": "John Doe",
+        "first_name": "John",        # ✅ Add this
+        "last_name": "Doe",          # ✅ Add this
         "bio": "I am a software engineer with over 5 years of experience.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
     }
@@ -241,15 +244,16 @@ def user_create_data(user_base_data):
 def user_update_data():
     return {
         "email": "john.doe.new@example.com",
-        "full_name": "John H. Doe",
-        "bio": "I specialize in backend development with Python and Node.js.",
+        "first_name": "John",               # ✅
+        "last_name": "Doe",                 # ✅
+        "bio": "I specialize in backend development.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
     }
 
 @pytest.fixture
 def user_response_data():
     return {
-        "id": "unique-id-string",
+        "id": uuid4(),
         "username": "testuser",
         "email": "test@example.com",
         "last_login_at": datetime.now(),
@@ -260,4 +264,35 @@ def user_response_data():
 
 @pytest.fixture
 def login_request_data():
-    return {"username": "john_doe_123", "password": "SecurePassword123!"}
+    return {"email": "john_doe_123", "password": "SecurePassword123!"}
+
+
+@pytest.fixture
+async def user_token(verified_user, async_client):
+    response = await async_client.post(
+        "/login/",
+        data={"username": verified_user.email, "password": "MySuperPassword$1234"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"}
+    )
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+async def admin_token(admin_user, async_client):
+    response = await async_client.post(
+        "/login/",
+        data={"username": admin_user.email, "password": "securepassword"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"}
+    )
+    print("Admin login response:", response.status_code, response.text)
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+async def manager_token(manager_user, async_client):
+    response = await async_client.post(
+        "/login/",
+        data={"username": manager_user.email, "password": "securepassword"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"}
+    )
+    return response.json()["access_token"]
