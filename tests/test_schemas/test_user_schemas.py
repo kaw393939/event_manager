@@ -26,7 +26,7 @@ def test_user_update_valid(user_update_data):
 def test_user_response_valid(user_response_data):
     user = UserResponse(**user_response_data)
     assert user.id == user_response_data["id"]
-    # assert user.last_login_at == user_response_data["last_login_at"]
+    assert user.last_login_at == user_response_data["last_login_at"]
 
 # Tests for LoginRequest
 def test_login_request_valid(login_request_data):
@@ -67,3 +67,21 @@ def test_user_base_invalid_email(user_base_data_invalid):
     
     assert "value is not a valid email address" in str(exc_info.value)
     assert "john.doe.example.com" in str(exc_info.value)
+
+# Tests for strips
+def test_user_base_strips_whitespace(user_base_data):
+    user_base_data["first_name"] = "  John  "
+    user_base_data["last_name"] = "  Doe "
+    user_base_data["nickname"] = " john_doe "
+    user_base_data["bio"] = "  Backend dev  "
+    user_base_data["linkedin_profile_url"] = "  https://linkedin.com/in/johndoe  "
+    user_base_data["github_profile_url"] = "  https://github.com/johndoe  "
+    
+    user = UserBase(**user_base_data)
+
+    assert user.first_name == "John"
+    assert user.last_name == "Doe"
+    assert user.nickname == "john_doe"
+    assert user.bio == "Backend dev"
+    assert user.linkedin_profile_url == "https://linkedin.com/in/johndoe"
+    assert user.github_profile_url == "https://github.com/johndoe"

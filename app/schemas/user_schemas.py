@@ -1,5 +1,5 @@
 from builtins import ValueError, any, bool, str
-from pydantic import BaseModel, EmailStr, Field, validator, root_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, validator, root_validator
 from typing import Optional, List
 from datetime import datetime
 from enum import Enum
@@ -31,9 +31,13 @@ class UserBase(BaseModel):
     profile_picture_url: Optional[str] = Field(None, example="https://example.com/profiles/john.jpg")
     linkedin_profile_url: Optional[str] =Field(None, example="https://linkedin.com/in/johndoe")
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
-
     _validate_urls = validator('profile_picture_url', 'linkedin_profile_url', 'github_profile_url', pre=True, allow_reuse=True)(validate_url)
  
+    @field_validator("first_name", "last_name", "nickname", "bio", "linkedin_profile_url", "github_profile_url", mode="before")
+    @classmethod
+    def strip_whitespace(cls, v):
+        return v.strip() if isinstance(v, str) else v
+    
     class Config:
         from_attributes = True
 
@@ -64,6 +68,8 @@ class UserResponse(UserBase):
     nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())    
     role: UserRole = Field(default=UserRole.AUTHENTICATED, example="AUTHENTICATED")
     is_professional: Optional[bool] = Field(default=False, example=True)
+    last_login_at: Optional[datetime] = Field(default=None, example=datetime.utcnow())
+
 
 class LoginRequest(BaseModel):
     email: str = Field(..., example="john.doe@example.com")
