@@ -33,6 +33,9 @@ from app.services.jwt_service import create_access_token
 from app.utils.link_generation import create_user_links, generate_pagination_links
 from app.dependencies import get_settings
 from app.services.email_service import EmailService
+import logging
+
+
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 settings = get_settings()
@@ -50,9 +53,13 @@ async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(g
         db: Dependency that provides an AsyncSession for database access.
         token: The OAuth2 access token obtained through OAuth2PasswordBearer dependency.
     """
+    #print(f"Access attempt by user with role: {current_user['role']} to fetch user ID: {user_id}")
+
     user = await UserService.get_by_id(db, user_id)
     if not user:
+        #print(f"User {user_id} not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    
 
     return UserResponse.model_construct(
         id=user.id,

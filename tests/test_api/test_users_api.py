@@ -33,6 +33,7 @@ async def test_retrieve_user_access_denied(async_client, verified_user, user_tok
 async def test_retrieve_user_access_allowed(async_client, admin_user, admin_token):
     headers = {"Authorization": f"Bearer {admin_token}"}
     response = await async_client.get(f"/users/{admin_user.id}", headers=headers)
+    print("response.status_code : " , response.status_code)
     assert response.status_code == 200
     assert response.json()["id"] == str(admin_user.id)
 

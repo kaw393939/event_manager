@@ -8,6 +8,7 @@ from app.services.email_service import EmailService
 from app.services.jwt_service import decode_token
 from settings.config import Settings
 from fastapi import Depends
+import logging
 
 def get_settings() -> Settings:
     """Return application settings."""
@@ -37,10 +38,13 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     )
     payload = decode_token(token)
     if payload is None:
+        print(f"Error retrieving user: {e}")
         raise credentials_exception
     user_id: str = payload.get("sub")
-    user_role: str = payload.get("role")
+    user_role = payload.get("role", "").split('.')[-1] 
+    print(f"User role from token: {user_role}")
     if user_id is None or user_role is None:
+        #print(f"Error retrieving user: {e}")
         raise credentials_exception
     return {"user_id": user_id, "role": user_role}
 

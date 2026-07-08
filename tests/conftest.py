@@ -17,7 +17,7 @@ Fixtures:
 from builtins import range
 from datetime import datetime
 from unittest.mock import patch
-from uuid import uuid4
+import uuid
 
 # Third-party imports
 import pytest
@@ -216,6 +216,7 @@ async def manager_user(db_session: AsyncSession):
 def user_base_data():
     return {
         "username": "john_doe_123",
+        "nickname": "jolly_panda_140",
         "email": "john.doe@example.com",
         "full_name": "John Doe",
         "bio": "I am a software engineer with over 5 years of experience.",
@@ -249,15 +250,34 @@ def user_update_data():
 @pytest.fixture
 def user_response_data():
     return {
-        "id": "unique-id-string",
+       # "id": "unique-id-string",
+        "id": str(uuid.uuid4()),  # Generate a valid UUID
         "username": "testuser",
         "email": "test@example.com",
         "last_login_at": datetime.now(),
         "created_at": datetime.now(),
         "updated_at": datetime.now(),
-        "links": []
+        "links": [],
+        "role": UserRole.AUTHENTICATED,  # Include the role
     }
 
 @pytest.fixture
 def login_request_data():
-    return {"username": "john_doe_123", "password": "SecurePassword123!"}
+    return {"email": "john_doe_123@example.com", "username": "john_doe_123", "password": "SecurePassword123!"}
+
+# Add this at the end of your existing conftest.py
+
+@pytest.fixture
+async def user_token(user):
+    access_token = create_access_token(data={"sub": user.email, "role": user.role})
+    return access_token
+
+@pytest.fixture
+async def admin_token(admin_user):
+    access_token = create_access_token(data={"sub": admin_user.email, "role": admin_user.role})
+    return access_token
+
+@pytest.fixture
+async def manager_token(manager_user):
+    access_token = create_access_token(data={"sub": manager_user.email, "role": manager_user.role})
+    return access_token
