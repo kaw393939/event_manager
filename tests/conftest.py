@@ -215,7 +215,7 @@ async def manager_user(db_session: AsyncSession):
 @pytest.fixture
 def user_base_data():
     return {
-        "username": "john_doe_123",
+        "nickname": "john_doe_123", # Fixed converted key username to nickname
         "email": "john.doe@example.com",
         "full_name": "John Doe",
         "bio": "I am a software engineer with over 5 years of experience.",
@@ -227,6 +227,8 @@ def user_base_data_invalid():
     return {
         "username": "john_doe_123",
         "email": "john.doe.example.com",
+        'first_name': 'John',
+        'last_name': 'Doe',
         "full_name": "John Doe",
         "bio": "I am a software engineer with over 5 years of experience.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
@@ -241,6 +243,8 @@ def user_create_data(user_base_data):
 def user_update_data():
     return {
         "email": "john.doe.new@example.com",
+        'first_name': 'John',
+        'last_name': 'Doe',
         "full_name": "John H. Doe",
         "bio": "I specialize in backend development with Python and Node.js.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
@@ -249,7 +253,7 @@ def user_update_data():
 @pytest.fixture
 def user_response_data():
     return {
-        "id": "unique-id-string",
+        "id": str(uuid4()),
         "username": "testuser",
         "email": "test@example.com",
         "last_login_at": datetime.now(),
@@ -260,4 +264,30 @@ def user_response_data():
 
 @pytest.fixture
 def login_request_data():
-    return {"username": "john_doe_123", "password": "SecurePassword123!"}
+    return {"email": "john.doe@example.com", "password": "SecurePassword123!"} # changed username is email
+
+from datetime import timedelta
+# Fixes Issue #5
+@pytest.fixture
+def admin_token(admin_user):
+    data = {
+        "sub": str(admin_user.id),
+        "role": admin_user.role.value  # assuming `role` is an Enum
+    }
+    return create_access_token(data=data, expires_delta=timedelta(minutes=60))
+
+@pytest.fixture
+def user_token(verified_user):
+    data = {
+        "sub": str(verified_user.id),
+        "role": verified_user.role.value
+    }
+    return create_access_token(data=data)
+
+@pytest.fixture
+def manager_token(manager_user):
+    data = {
+        "sub": str(manager_user.id),
+        "role": manager_user.role.value
+    }
+    return create_access_token(data=data)

@@ -189,3 +189,89 @@ async def test_list_users_unauthorized(async_client, user_token):
         headers={"Authorization": f"Bearer {user_token}"}
     )
     assert response.status_code == 403  # Forbidden, as expected for regular user
+
+# Fixes Issue #4
+@pytest.mark.asyncio
+async def test_update_multiple_profile_fields(async_client, admin_user, admin_token):
+    """Test updating multiple profile fields simultaneously"""
+    updated_data = {
+        "bio": "New professional bio",
+        "profile_picture_url": "https://example.com/new_pic.jpg",
+        "github_profile_url": "https://github.com/newprofile",
+        "linkedin_profile_url": "https://linkedin.com/in/newprofile"
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    for field, value in updated_data.items():
+        assert response.json()[field] == value
+
+@pytest.mark.asyncio
+async def test_update_profile_fields_individually(async_client, admin_user, admin_token):
+    """Test updating profile fields one at a time"""
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    
+    # Update bio only
+    bio_update = {"bio": "Updated bio only"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=bio_update, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["bio"] == bio_update["bio"]
+    
+    # Update profile picture only
+    pic_update = {"profile_picture_url": "https://example.com/another_pic.jpg"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=pic_update, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["profile_picture_url"] == pic_update["profile_picture_url"]
+
+@pytest.mark.asyncio
+async def test_update_profile_with_empty_fields(async_client, admin_user, admin_token):
+    """Test updating profile with empty fields"""
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    updated_data = {
+        "bio": "",
+        "profile_picture_url": None,
+        "github_profile_url": None,
+        "linkedin_profile_url": None
+    }
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_update_profile_with_invalid_urls(async_client, admin_user, admin_token):
+    """Test updating profile with invalid URLs"""
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    invalid_data = {
+        "profile_picture_url": "invalid-url",
+        "github_profile_url": "not-a-url",
+        "linkedin_profile_url": "ftp://invalid-protocol.com"
+    }
+    response = await async_client.put(f"/users/{admin_user.id}", json=invalid_data, headers=headers)
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_update_profile_with_long_bio(async_client, admin_user, admin_token):
+    """Test updating profile with bio exceeding maximum length"""
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    long_bio = "x" * 501  # Exceeds 500 character limit
+    updated_data = {"bio": long_bio}
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 200
+
+@pytest.mark.asyncio
+async def test_partial_profile_update(async_client, admin_user, admin_token):
+    """Test partial update of profile fields"""
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    
+    # Initial state
+    initial_data = {
+        "bio": "Initial bio",
+        "profile_picture_url": "https://example.com/initial.jpg"
+    }
+    await async_client.put(f"/users/{admin_user.id}", json=initial_data, headers=headers)
+    
+    # Partial update
+    partial_update = {"bio": "Updated bio only"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=partial_update, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["bio"] == "Updated bio only"
+    assert response.json()["profile_picture_url"] == initial_data["profile_picture_url"]
