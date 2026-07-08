@@ -39,7 +39,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     email: EmailStr = Field(..., example="john.doe@example.com")
-    password: str = Field(..., example="Secure*1234")
+    password: str = Field(..., min_length=8, max_length=32, pattern=r"^(?:[^A-Z]*[A-Z]){1}(?:[^a-z]*[a-z]){1}(?:[^\d]*\d){1}(?:[^@$!%*?&]*[@$!%*?&]){1}.*$", example="Secure*1234")
 
 class UserUpdate(UserBase):
     email: Optional[EmailStr] = Field(None, example="john.doe@example.com")
@@ -67,7 +67,7 @@ class UserResponse(UserBase):
 
 class LoginRequest(BaseModel):
     email: str = Field(..., example="john.doe@example.com")
-    password: str = Field(..., example="Secure*1234")
+    password: str = Field(..., min_length=8, max_length=32, pattern=r"^(?:[^A-Z]*[A-Z]){1}(?:[^a-z]*[a-z]){1}(?:[^\d]*\d){1}(?:[^@$!%*?&]*[@$!%*?&]){1}.*$", example="Secure*1234")
 
 class ErrorResponse(BaseModel):
     error: str = Field(..., example="Not Found")
