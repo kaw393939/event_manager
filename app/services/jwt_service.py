@@ -6,13 +6,14 @@ from settings.config import settings
 
 def create_access_token(*, data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
-    # Convert role to uppercase before encoding the JWT
+    # Convert role to string and then to uppercase before encoding the JWT
     if 'role' in to_encode:
-        to_encode['role'] = to_encode['role'].upper()
+        to_encode['role'] = str(to_encode['role']).upper()  # Convert role to string first
     expire = datetime.utcnow() + (expires_delta if expires_delta else timedelta(minutes=settings.access_token_expire_minutes))
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
     return encoded_jwt
+
 
 def decode_token(token: str):
     try:
@@ -20,3 +21,4 @@ def decode_token(token: str):
         return decoded
     except jwt.PyJWTError:
         return None
+    

@@ -36,6 +36,8 @@ from app.utils.security import hash_password
 from app.utils.template_manager import TemplateManager
 from app.services.email_service import EmailService
 from app.services.jwt_service import create_access_token
+from datetime import datetime, timedelta
+from app.services.jwt_service import create_access_token
 
 fake = Faker()
 
@@ -261,3 +263,30 @@ def user_response_data():
 @pytest.fixture
 def login_request_data():
     return {"username": "john_doe_123", "password": "SecurePassword123!"}
+
+@pytest.fixture
+def user_token(verified_user):
+    """Generate a valid JWT token for a regular authenticated user."""
+    expires_delta = timedelta(minutes=30)
+    return create_access_token(
+        data={"sub": verified_user.email, "role": "AUTHENTICATED"},
+        expires_delta=expires_delta
+    )
+
+@pytest.fixture
+def admin_token(admin_user):
+    """Generate a valid JWT token for an admin user."""
+    expires_delta = timedelta(minutes=30)
+    return create_access_token(
+        data={"sub": admin_user.email, "role": "ADMIN"},
+        expires_delta=expires_delta
+    )
+
+@pytest.fixture
+def manager_token(manager_user):
+    """Generate a valid JWT token for a manager user."""
+    expires_delta = timedelta(minutes=30)
+    return create_access_token(
+        data={"sub": manager_user.email, "role": "MANAGER"},
+        expires_delta=expires_delta
+    )

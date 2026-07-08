@@ -8,6 +8,7 @@ from app.services.email_service import EmailService
 from app.services.jwt_service import decode_token
 from settings.config import Settings
 from fastapi import Depends
+from typing import AsyncGenerator
 
 def get_settings() -> Settings:
     """Return application settings."""
@@ -17,7 +18,7 @@ def get_email_service() -> EmailService:
     template_manager = TemplateManager()
     return EmailService(template_manager=template_manager)
 
-async def get_db() -> AsyncSession:
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Dependency that provides a database session for each request."""
     async_session_factory = Database.get_session_factory()
     async with async_session_factory() as session:
