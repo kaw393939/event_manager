@@ -182,13 +182,15 @@ async def users_with_same_role_50_users(db_session):
 
 @pytest.fixture
 async def admin_user(db_session: AsyncSession):
+    from app.utils.security import hash_password
     user = User(
         nickname="admin_user",
         email="admin@example.com",
         first_name="John",
         last_name="Doe",
-        hashed_password="securepassword",
+        hashed_password=hash_password("securepassword"),
         role=UserRole.ADMIN,
+        email_verified=True,   # <-- required for login!
         is_locked=False,
     )
     db_session.add(user)
@@ -261,3 +263,103 @@ def user_response_data():
 @pytest.fixture
 def login_request_data():
     return {"username": "john_doe_123", "password": "SecurePassword123!"}
+
+@pytest.fixture
+async def user_token(async_client, verified_user):
+    # This will log in as the verified_user fixture and get a JWT token
+    data = {
+        "username": verified_user.email,
+        "password": "MySuperPassword$1234",  # This matches your verified_user fixture
+    }
+    response = await async_client.post("/login/", data=data)
+    assert response.status_code == 200
+    return response.json()["access_token"]
+
+@pytest.fixture
+async def admin_token(async_client, admin_user):
+    # This will log in as the admin_user fixture and get a JWT token
+    data = {
+        "username": admin_user.email,
+        "password": "securepassword",  # This matches your admin_user fixture
+    }
+    response = await async_client.post("/login/", data=data)
+    assert response.status_code == 200
+    return response.json()["access_token"]
+@pytest.fixture
+async def manager_user(db_session: AsyncSession):
+    from app.utils.security import hash_password
+    user = User(
+        nickname="manager_john",
+        first_name="John",
+        last_name="Doe",
+        email="manager_user@example.com",
+        hashed_password=hash_password("securepassword"),  # <-- Hash the password!
+        role=UserRole.MANAGER,
+        email_verified=True,   # <-- Add this line!
+        is_locked=False,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    return user
+@pytest.fixture
+async def manager_token(async_client, manager_user):
+    # This will log in as the manager_user fixture and get a JWT token
+    data = {
+        "username": manager_user.email,
+        "password": "securepassword",  # This matches your manager_user fixture
+    }
+    response = await async_client.post("/login/", data=data)
+    assert response.status_code == 200
+    return response.json()["access_token"]
+import uuid
+from datetime import datetime
+import pytest
+
+@pytest.fixture
+def user_base_data():
+    return {
+        "nickname": "testuser123",  # always provide nickname!
+        "email": "john.doe@example.com",
+        "first_name": "John",
+        "last_name": "Doe",
+        "bio": "I am a software engineer with over 5 years of experience.",
+        "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg",
+        "linkedin_profile_url": "https://linkedin.com/in/johndoe",
+        "github_profile_url": "https://github.com/johndoe"
+    }
+
+@pytest.fixture
+def user_create_data(user_base_data):
+    data = user_base_data.copy()
+    data["password"] = "SecurePassword123!"
+    return data
+
+@pytest.fixture
+def user_update_data(user_base_data):
+    data = user_base_data.copy()
+    data.update({
+        "email": "john.doe.new@example.com",
+        "nickname": "john_doe123",
+        "first_name": "John",
+        "last_name": "Doe",
+        "bio": "I specialize in backend development with Python and Node.js.",
+        "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
+    })
+    return data
+
+@pytest.fixture
+def user_response_data(user_base_data):
+    data = user_base_data.copy()
+    data.update({
+        "id": str(uuid.uuid4()),
+        "role": "AUTHENTICATED",
+        "is_professional": False,
+        "created_at": datetime.now(),
+        "updated_at": datetime.now(),
+        "last_login_at": datetime.now()
+    })
+    return data
+
+@pytest.fixture
+def login_request_data():
+    return {"email": "john_doe_123@example.com", "password": "SecurePassword123!"}

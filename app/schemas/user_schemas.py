@@ -4,8 +4,7 @@ from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 import uuid
-import re
-
+import re 
 from app.utils.nickname_gen import generate_nickname
 
 class UserRole(str, Enum):
@@ -24,12 +23,18 @@ def validate_url(url: Optional[str]) -> Optional[str]:
 
 class UserBase(BaseModel):
     email: EmailStr = Field(..., example="john.doe@example.com")
-    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())
+    nickname: Optional[str] = Field(
+        None, 
+        min_length=3, 
+        max_length=20,
+        pattern=r'^\w{3,20}$',  # <-- only letters, numbers, underscore, 3-20 chars
+        example=generate_nickname()
+    )
     first_name: Optional[str] = Field(None, example="John")
     last_name: Optional[str] = Field(None, example="Doe")
     bio: Optional[str] = Field(None, example="Experienced software developer specializing in web applications.")
     profile_picture_url: Optional[str] = Field(None, example="https://example.com/profiles/john.jpg")
-    linkedin_profile_url: Optional[str] =Field(None, example="https://linkedin.com/in/johndoe")
+    linkedin_profile_url: Optional[str] = Field(None, example="https://linkedin.com/in/johndoe")
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
 
     _validate_urls = validator('profile_picture_url', 'linkedin_profile_url', 'github_profile_url', pre=True, allow_reuse=True)(validate_url)
@@ -43,12 +48,18 @@ class UserCreate(UserBase):
 
 class UserUpdate(UserBase):
     email: Optional[EmailStr] = Field(None, example="john.doe@example.com")
-    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example="john_doe123")
+    nickname: Optional[str] = Field(
+        None, 
+        min_length=3, 
+        max_length=20,
+        pattern=r'^\w{3,20}$',  # <-- same pattern here
+        example="john_doe123"
+    )
     first_name: Optional[str] = Field(None, example="John")
     last_name: Optional[str] = Field(None, example="Doe")
     bio: Optional[str] = Field(None, example="Experienced software developer specializing in web applications.")
     profile_picture_url: Optional[str] = Field(None, example="https://example.com/profiles/john.jpg")
-    linkedin_profile_url: Optional[str] =Field(None, example="https://linkedin.com/in/johndoe")
+    linkedin_profile_url: Optional[str] = Field(None, example="https://linkedin.com/in/johndoe")
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
 
     @root_validator(pre=True)
@@ -61,7 +72,13 @@ class UserResponse(UserBase):
     id: uuid.UUID = Field(..., example=uuid.uuid4())
     role: UserRole = Field(default=UserRole.AUTHENTICATED, example="AUTHENTICATED")
     email: EmailStr = Field(..., example="john.doe@example.com")
-    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())    
+    nickname: Optional[str] = Field(
+        None, 
+        min_length=3, 
+        max_length=20,
+        pattern=r'^\w{3,20}$',  # <-- and here too
+        example=generate_nickname()
+    )    
     role: UserRole = Field(default=UserRole.AUTHENTICATED, example="AUTHENTICATED")
     is_professional: Optional[bool] = Field(default=False, example=True)
 
