@@ -2,10 +2,10 @@ from builtins import Exception, bool, classmethod, int, str
 from datetime import datetime, timezone
 import secrets
 from typing import Optional, Dict, List
-from pydantic import ValidationError
-from sqlalchemy import func, null, update, select
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import ValidationError # type: ignore
+from sqlalchemy import func, null, update, select # type: ignore
+from sqlalchemy.exc import SQLAlchemyError # type: ignore
+from sqlalchemy.ext.asyncio import AsyncSession # type: ignore
 from app.dependencies import get_email_service, get_settings
 from app.models.user_model import User
 from app.schemas.user_schemas import UserCreate, UserUpdate
