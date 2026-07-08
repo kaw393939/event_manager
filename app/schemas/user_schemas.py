@@ -29,17 +29,39 @@ class UserBase(BaseModel):
     last_name: Optional[str] = Field(None, example="Doe")
     bio: Optional[str] = Field(None, example="Experienced software developer specializing in web applications.")
     profile_picture_url: Optional[str] = Field(None, example="https://example.com/profiles/john.jpg")
-    linkedin_profile_url: Optional[str] =Field(None, example="https://linkedin.com/in/johndoe")
+    linkedin_profile_url: Optional[str] = Field(None, example="https://linkedin.com/in/johndoe")
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
+    website: Optional[str] = Field(None, example="https://myportfolio.dev")
 
-    _validate_urls = validator('profile_picture_url', 'linkedin_profile_url', 'github_profile_url', pre=True, allow_reuse=True)(validate_url)
- 
+    _validate_urls = validator(
+        'profile_picture_url', 'linkedin_profile_url', 'github_profile_url', 'website',
+        pre=True, allow_reuse=True
+    )(validate_url)
+
     class Config:
         from_attributes = True
 
 class UserCreate(UserBase):
     email: EmailStr = Field(..., example="john.doe@example.com")
     password: str = Field(..., example="Secure*1234")
+    is_professional: Optional[bool] = Field(default=False, example=True)
+    experience: Optional[str] = Field(None, example="5 years in full-stack development")
+    certifications: Optional[List[str]] = Field(None, example=["AWS Certified Developer", "Scrum Master"])
+    website: Optional[str] = Field(None, example="https://myportfolio.dev")
+
+    @validator('password')
+    def validate_password(cls, v):
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        if not any(c.islower() for c in v):
+            raise ValueError("Password must contain a lowercase letter")
+        if not any(c.isupper() for c in v):
+            raise ValueError("Password must contain an uppercase letter")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain a number")
+        if not any(c in "!@#$%^&*()-_=+[{]}\\|;:'\",<.>/?`~" for c in v):
+            raise ValueError("Password must contain a special character")
+        return v
 
 class UserUpdate(UserBase):
     email: Optional[EmailStr] = Field(None, example="john.doe@example.com")
@@ -48,8 +70,12 @@ class UserUpdate(UserBase):
     last_name: Optional[str] = Field(None, example="Doe")
     bio: Optional[str] = Field(None, example="Experienced software developer specializing in web applications.")
     profile_picture_url: Optional[str] = Field(None, example="https://example.com/profiles/john.jpg")
-    linkedin_profile_url: Optional[str] =Field(None, example="https://linkedin.com/in/johndoe")
+    linkedin_profile_url: Optional[str] = Field(None, example="https://linkedin.com/in/johndoe")
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
+    is_professional: Optional[bool] = Field(default=False, example=True)
+    experience: Optional[str] = Field(None, example="5 years in full-stack development")
+    certifications: Optional[List[str]] = Field(None, example=["AWS Certified Developer", "Scrum Master"])
+    website: Optional[str] = Field(None, example="https://myportfolio.dev")
 
     @root_validator(pre=True)
     def check_at_least_one_value(cls, values):
@@ -61,8 +87,7 @@ class UserResponse(UserBase):
     id: uuid.UUID = Field(..., example=uuid.uuid4())
     role: UserRole = Field(default=UserRole.AUTHENTICATED, example="AUTHENTICATED")
     email: EmailStr = Field(..., example="john.doe@example.com")
-    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())    
-    role: UserRole = Field(default=UserRole.AUTHENTICATED, example="AUTHENTICATED")
+    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())
     is_professional: Optional[bool] = Field(default=False, example=True)
 
 class LoginRequest(BaseModel):
@@ -76,11 +101,12 @@ class ErrorResponse(BaseModel):
 class UserListResponse(BaseModel):
     items: List[UserResponse] = Field(..., example=[{
         "id": uuid.uuid4(), "nickname": generate_nickname(), "email": "john.doe@example.com",
-        "first_name": "John", "bio": "Experienced developer", "role": "AUTHENTICATED",
-        "last_name": "Doe", "bio": "Experienced developer", "role": "AUTHENTICATED",
-        "profile_picture_url": "https://example.com/profiles/john.jpg", 
-        "linkedin_profile_url": "https://linkedin.com/in/johndoe", 
-        "github_profile_url": "https://github.com/johndoe"
+        "first_name": "John", "last_name": "Doe", "bio": "Experienced developer", "role": "AUTHENTICATED",
+        "profile_picture_url": "https://example.com/profiles/john.jpg",
+        "linkedin_profile_url": "https://linkedin.com/in/johndoe",
+        "github_profile_url": "https://github.com/johndoe",
+        "website": "https://myportfolio.dev",
+        "is_professional": True
     }])
     total: int = Field(..., example=100)
     page: int = Field(..., example=1)
