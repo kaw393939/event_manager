@@ -68,7 +68,7 @@ async def test_create_user_duplicate_email(async_client, verified_user):
         "password": "AnotherPassword123!",
     }
     response = await async_client.post("/register/", json=user_data)
-    assert response.status_code == 400
+    assert response.status_code == 409
     assert "Email already exists" in response.json().get("detail", "")
 
 @pytest.mark.asyncio
@@ -189,3 +189,59 @@ async def test_list_users_unauthorized(async_client, user_token):
         headers={"Authorization": f"Bearer {user_token}"}
     )
     assert response.status_code == 403  # Forbidden, as expected for regular user
+
+@pytest.mark.asyncio
+async def test_create_user_valid_nickname(async_client, admin_token):
+    payload = {
+        "email": "validuser@example.com",
+        "password": "StrongPass123!",
+        "nickname": "valid_nick"
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.post("/users/", json=payload, headers=headers)
+    print("RESPONSE:", response.status_code, response.text)
+    assert response.status_code == 201
+    assert response.json()["nickname"] == "valid_nick"
+
+
+
+@pytest.mark.asyncio
+async def test_create_user_invalid_nickname_format(async_client, admin_token):
+    payload = {
+        "email": "badnick@example.com",
+        "password": "StrongPass123!",
+        "nickname": "bad@nick!"
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.post("/users/", json=payload, headers=headers)
+    print("RESPONSE:", response.status_code, response.text)
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_user_nickname_too_short(async_client, admin_token):
+    payload = {
+        "email": "shortnick@example.com",
+        "password": "StrongPass123!",
+        "nickname": "ab"
+    }
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.post("/users/", json=payload, headers=headers)
+    print("RESPONSE:", response.status_code, response.text)
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_user_duplicate_nickname(async_client, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    payload = {
+        "email": "dup1@example.com",
+        "password": "StrongPass123!",
+        "nickname": "duplicate"
+    }
+    await async_client.post("/users/", json=payload, headers=headers)
+
+    payload["email"] = "dup2@example.com"
+    response = await async_client.post("/users/", json=payload, headers=headers)
+    print("RESPONSE:", response.status_code, response.text)
+    assert response.status_code in (400, 409)

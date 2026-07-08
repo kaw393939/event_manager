@@ -24,7 +24,7 @@ def validate_url(url: Optional[str]) -> Optional[str]:
 
 class UserBase(BaseModel):
     email: EmailStr = Field(..., example="john.doe@example.com")
-    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())
+    nickname: Optional[str] = Field(None, min_length=3, max_length=30, example=generate_nickname())
     first_name: Optional[str] = Field(None, example="John")
     last_name: Optional[str] = Field(None, example="Doe")
     bio: Optional[str] = Field(None, example="Experienced software developer specializing in web applications.")
@@ -33,13 +33,34 @@ class UserBase(BaseModel):
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
 
     _validate_urls = validator('profile_picture_url', 'linkedin_profile_url', 'github_profile_url', pre=True, allow_reuse=True)(validate_url)
- 
+
+    @validator('nickname')
+    def validate_nickname_format(cls, value):
+        if value and not re.match(r'^[a-zA-Z0-9_-]+$', value):
+            raise ValueError('Nickname must be 3-30 characters and contain only letters, numbers, underscores, or hyphens.')
+        return value
+
     class Config:
         from_attributes = True
 
 class UserCreate(UserBase):
     email: EmailStr = Field(..., example="john.doe@example.com")
     password: str = Field(..., example="Secure*1234")
+
+    @validator('password')
+    def validate_password(cls, value):
+        if len(value) < 8:
+            raise ValueError("Password must be at least 8 characters long.")
+        if not re.search(r"[A-Z]", value):
+            raise ValueError("Password must include at least one uppercase letter.")
+        if not re.search(r"[a-z]", value):
+            raise ValueError("Password must include at least one lowercase letter.")
+        if not re.search(r"[0-9]", value):
+            raise ValueError("Password must include at least one number.")
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", value):
+            raise ValueError("Password must include at least one special character.")
+        return value
+
 
 class UserUpdate(UserBase):
     email: Optional[EmailStr] = Field(None, example="john.doe@example.com")
@@ -50,6 +71,23 @@ class UserUpdate(UserBase):
     profile_picture_url: Optional[str] = Field(None, example="https://example.com/profiles/john.jpg")
     linkedin_profile_url: Optional[str] =Field(None, example="https://linkedin.com/in/johndoe")
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
+    password: Optional[str] = Field(None, example="Secure*1234")  # Add this if not already present
+
+    @validator('password')
+    def validate_password(cls, value):
+        if value is None:
+            return value
+        if len(value) < 8:
+            raise ValueError("Password must be at least 8 characters long.")
+        if not re.search(r"[A-Z]", value):
+            raise ValueError("Password must include at least one uppercase letter.")
+        if not re.search(r"[a-z]", value):
+            raise ValueError("Password must include at least one lowercase letter.")
+        if not re.search(r"[0-9]", value):
+            raise ValueError("Password must include at least one number.")
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", value):
+            raise ValueError("Password must include at least one special character.")
+        return value
 
     @root_validator(pre=True)
     def check_at_least_one_value(cls, values):

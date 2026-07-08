@@ -16,6 +16,8 @@ from app.services.email_service import EmailService
 from app.models.user_model import UserRole
 import logging
 
+from fastapi import HTTPException
+
 settings = get_settings()
 logger = logging.getLogger(__name__)
 
@@ -53,25 +55,44 @@ class UserService:
     async def create(cls, session: AsyncSession, user_data: Dict[str, str], email_service: EmailService) -> Optional[User]:
         try:
             validated_data = UserCreate(**user_data).model_dump()
+
+            # Check if email already exists
             existing_user = await cls.get_by_email(session, validated_data['email'])
             if existing_user:
                 logger.error("User with given email already exists.")
-                return None
+                raise HTTPException(status_code=409, detail="Email already exists.")
+
+            # Check if nickname is already taken
+            nickname = validated_data.get('nickname')
+            if nickname:
+                existing_nick = await cls.get_by_nickname(session, nickname)
+                if existing_nick:
+                    logger.warning("Nickname already taken.")
+                    raise HTTPException(status_code=409, detail="Nickname already taken.")
+
+            # Prepare user creation
             validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             new_user = User(**validated_data)
             new_user.verification_token = generate_verification_token()
-            new_nickname = generate_nickname()
-            while await cls.get_by_nickname(session, new_nickname):
-                new_nickname = generate_nickname()
-            new_user.nickname = new_nickname
+
             session.add(new_user)
             await session.commit()
+            await session.refresh(new_user)
+
             await email_service.send_verification_email(new_user)
-            
             return new_user
+
         except ValidationError as e:
             logger.error(f"Validation error during user creation: {e}")
             return None
+        except HTTPException as e:
+            logger.warning(f"User creation failed: {e.detail}")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error during user creation: {e}")
+            await session.rollback()
+            return None
+
 
     @classmethod
     async def update(cls, session: AsyncSession, user_id: UUID, update_data: Dict[str, str]) -> Optional[User]:
