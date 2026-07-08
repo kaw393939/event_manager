@@ -22,6 +22,19 @@ def validate_url(url: Optional[str]) -> Optional[str]:
         raise ValueError('Invalid URL format')
     return url
 
+def validate_password(password: str) -> str:
+    if len(password) < 8 or len(password) > 32:
+        raise ValueError("Password must be between 8 and 32 characters.")
+    if not re.search(r"[A-Z]", password):
+        raise ValueError("Password must contain at least one uppercase letter.")
+    if not re.search(r"[a-z]", password):
+        raise ValueError("Password must contain at least one lowercase letter.")
+    if not re.search(r"\d", password):
+        raise ValueError("Password must contain at least one digit.")
+    if not re.search(r"[@$!%*?&]", password):
+        raise ValueError("Password must contain at least one special character (@, $, !, %, *, ?, &).")
+    return password
+
 class UserBase(BaseModel):
     email: EmailStr = Field(..., example="john.doe@example.com")
     nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())
@@ -39,7 +52,14 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     email: EmailStr = Field(..., example="john.doe@example.com")
-    password: str = Field(..., example="Secure*1234")
+    password: str = Field(..., example="StrongPassword123!")
+
+    @root_validator(pre=True)
+    def validate_fields(cls, values):
+        password = values.get('password')
+        if password:
+            values['password'] = validate_password(password)
+        return values
 
 class UserUpdate(UserBase):
     email: Optional[EmailStr] = Field(None, example="john.doe@example.com")
@@ -67,7 +87,14 @@ class UserResponse(UserBase):
 
 class LoginRequest(BaseModel):
     email: str = Field(..., example="john.doe@example.com")
-    password: str = Field(..., example="Secure*1234")
+    password: str = Field(..., example="StrongPassword123!")
+
+    @root_validator(pre=True)
+    def validate_login_password(cls, values):
+        password = values.get('password')
+        if password:
+            validate_password(password)
+        return values
 
 class ErrorResponse(BaseModel):
     error: str = Field(..., example="Not Found")
