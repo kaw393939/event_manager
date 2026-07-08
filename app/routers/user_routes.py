@@ -68,7 +68,8 @@ async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(g
         last_login_at=user.last_login_at,
         created_at=user.created_at,
         updated_at=user.updated_at,
-        links=create_user_links(user.id, request)  
+        links=create_user_links(user.id, request)
+        
     )
 
 # Additional endpoints for update, delete, create, and list users follow a similar pattern, using
