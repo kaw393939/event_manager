@@ -1,5 +1,6 @@
 from builtins import bool, int, str
 from datetime import datetime
+from typing import Optional
 from enum import Enum
 import uuid
 from sqlalchemy import (
@@ -55,6 +56,7 @@ class User(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     nickname: Mapped[str] = Column(String(50), unique=True, nullable=False, index=True)
+    username: Mapped[Optional[str]] = Column(String(50), unique=True, nullable=True)
     email: Mapped[str] = Column(String(255), unique=True, nullable=False, index=True)
     first_name: Mapped[str] = Column(String(100), nullable=True)
     last_name: Mapped[str] = Column(String(100), nullable=True)

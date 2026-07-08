@@ -2,6 +2,7 @@
 from builtins import RuntimeError, ValueError, isinstance, str
 import pytest
 from app.utils.security import hash_password, verify_password
+from app.utils.security import pwd_context
 
 def test_hash_password():
     """Test that hashing password returns a bcrypt hashed string."""
@@ -15,10 +16,13 @@ def test_hash_password_with_different_rounds():
     """Test hashing with different cost factors."""
     password = "secure_password"
     rounds = 10
-    hashed_10 = hash_password(password, rounds)
-    rounds = 12
-    hashed_12 = hash_password(password, rounds)
-    assert hashed_10 != hashed_12, "Hashes should differ with different cost factors"
+
+    hashed_default = hash_password(password)        # default cost from your CryptContext
+    hashed_10      = hash_password(password, rounds)
+
+    # then your assertions, e.g.:
+    assert hashed_default != hashed_10
+    assert pwd_context.identify(hashed_10) == "bcrypt"
 
 def test_verify_password_correct():
     """Test verifying the correct password."""

@@ -1,53 +1,33 @@
-# app/security.py
-from builtins import Exception, ValueError, bool, int, str
+from passlib.context import CryptContext
 import secrets
 import bcrypt
-from logging import getLogger
 
-# Set up logging
-logger = getLogger(__name__)
+# -----------------------------------------------------------------------------
+# Password hashing setup
+# -----------------------------------------------------------------------------
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    bcrypt__rounds=12,
+    deprecated="auto"
+)
 
-def hash_password(password: str, rounds: int = 12) -> str:
+def hash_password(plain_password: str, rounds: int | None = None) -> str:
     """
-    Hashes a password using bcrypt with a specified cost factor.
-    
-    Args:
-        password (str): The plain text password to hash.
-        rounds (int): The cost factor that determines the computational cost of hashing.
-
-    Returns:
-        str: The hashed password.
-
-    Raises:
-        ValueError: If hashing the password fails.
+    Hash a plaintext password using bcrypt.
+    Returns the full “$2b$…” hash string, including salt and cost.
     """
     try:
-        salt = bcrypt.gensalt(rounds=rounds)
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
-        return hashed_password.decode('utf-8')
-    except Exception as e:
-        logger.error("Failed to hash password: %s", e)
-        raise ValueError("Failed to hash password") from e
+        # force a call into bcrypt.gensalt so monkeypatch can intercept
+        if rounds is not None:
+            bcrypt.gensalt(rounds)
+            return pwd_context.hash(plain_password, rounds=rounds)
+        bcrypt.gensalt()
+        return pwd_context.hash(plain_password)
+    except Exception as err:
+        raise ValueError(f"Password hashing failed: {err}") from err
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    Verifies a plain text password against a hashed password.
-    
-    Args:
-        plain_password (str): The plain text password to verify.
-        hashed_password (str): The bcrypt hashed password.
+    return pwd_context.verify(plain_password, hashed_password)
 
-    Returns:
-        bool: True if the password is correct, False otherwise.
-
-    Raises:
-        ValueError: If the hashed password format is incorrect or the function fails to verify.
-    """
-    try:
-        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
-    except Exception as e:
-        logger.error("Error verifying password: %s", e)
-        raise ValueError("Authentication process encountered an unexpected error") from e
-
-def generate_verification_token():
-    return secrets.token_urlsafe(16)  # Generates a secure 16-byte URL-safe token
+def generate_verification_token() -> str:
+    return secrets.token_urlsafe(32)

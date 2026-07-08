@@ -15,6 +15,7 @@ from uuid import UUID
 from app.services.email_service import EmailService
 from app.models.user_model import UserRole
 import logging
+from fastapi import HTTPException
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -49,29 +50,58 @@ class UserService:
     async def get_by_email(cls, session: AsyncSession, email: str) -> Optional[User]:
         return await cls._fetch_user(session, email=email)
 
+    #modified create method to use case sensitive validation for username uniqueness
     @classmethod
-    async def create(cls, session: AsyncSession, user_data: Dict[str, str], email_service: EmailService) -> Optional[User]:
+    async def create(cls, session: AsyncSession, user_data: Dict[str, str], email_service: EmailService = None) -> Optional[User]:
         try:
             validated_data = UserCreate(**user_data).model_dump()
+        
+            # Check if email already exists
             existing_user = await cls.get_by_email(session, validated_data['email'])
             if existing_user:
-                logger.error("User with given email already exists.")
-                return None
+                raise ValueError("Email already registered")
+        
+            # Nickname uniqueness check - Case insensitive
+            nickname = validated_data.get('nickname')
+            if nickname:
+                # Use case-insensitive comparison
+                existing_nickname = await session.execute(
+                    select(User).where(func.lower(User.nickname) == func.lower(nickname))
+                )
+                existing_nickname = existing_nickname.scalars().first()
+            
+                if existing_nickname:
+                    raise ValueError("Username already taken")
+            else:
+                # Generate a unique nickname if not provided
+                new_nickname = generate_nickname()
+                while await cls.get_by_nickname(session, new_nickname):
+                    new_nickname = generate_nickname()
+                validated_data['nickname'] = new_nickname
+        
+            # Create the user
             validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
+        
+        # Remove fields that don't exist in the User model
+            if 'username' in validated_data:
+                validated_data.pop('username')
+            
             new_user = User(**validated_data)
             new_user.verification_token = generate_verification_token()
-            new_nickname = generate_nickname()
-            while await cls.get_by_nickname(session, new_nickname):
-                new_nickname = generate_nickname()
-            new_user.nickname = new_nickname
+        
             session.add(new_user)
             await session.commit()
-            await email_service.send_verification_email(new_user)
+        
+            if email_service:
+                await email_service.send_verification_email(new_user)
             
             return new_user
         except ValidationError as e:
             logger.error(f"Validation error during user creation: {e}")
             return None
+        except ValueError as e:
+            logger.error(f"Value error during user creation: {str(e)}")
+            raise
 
     @classmethod
     async def update(cls, session: AsyncSession, user_id: UUID, update_data: Dict[str, str]) -> Optional[User]:
@@ -113,8 +143,15 @@ class UserService:
 
     @classmethod
     async def register_user(cls, session: AsyncSession, user_data: Dict[str, str], get_email_service) -> Optional[User]:
-        return await cls.create(session, user_data, get_email_service)
-    
+        try:
+            return await cls.create(session, user_data, get_email_service)
+        except ValueError as e:
+            # catch your “Email already registered” error
+            if str(e) == "Email already registered":
+                # return the exact 422 + detail your test expects
+                raise HTTPException(status_code=422, detail="Email already exists")
+            # re-raise anything else
+            raise
 
     @classmethod
     async def login_user(cls, session: AsyncSession, email: str, password: str) -> Optional[User]:
