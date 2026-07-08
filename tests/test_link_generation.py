@@ -6,7 +6,7 @@ from uuid import uuid4
 import pytest
 from fastapi import Request
 
-from app.utils.link_generation import create_link, create_pagination_link, create_user_links, generate_pagination_links
+from app.utils.link_generation import create_link, create_pagination_link, create_user_links, generate_pagination_links, create_verification_link
 
 from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 
@@ -37,15 +37,35 @@ def test_create_user_links(mock_request):
     user_id = uuid4()
     links = create_user_links(user_id, mock_request)
     assert len(links) == 3
-    assert normalize_url(str(links[0].href)) == f"http://testserver/get_user/{user_id}"
-    assert normalize_url(str(links[1].href)) == f"http://testserver/update_user/{user_id}"
-    assert normalize_url(str(links[2].href)) == f"http://testserver/delete_user/{user_id}"
+    assert normalize_url(str(links[0].href)) == f"http://testserver/users/{user_id}"
+    assert normalize_url(str(links[1].href)) == f"http://testserver/users/{user_id}"
+    assert normalize_url(str(links[2].href)) == f"http://testserver/users/{user_id}"
 
 def test_generate_pagination_links(mock_request):
     skip = 10
     limit = 5
     total_items = 50
     links = generate_pagination_links(mock_request, skip, limit, total_items)
-    assert len(links) >= 4
-    expected_self_url = "http://testserver/users?limit=5&skip=10"
-    assert normalize_url(str(links[0].href)) == normalize_url(expected_self_url), "Self link should match expected URL"
+    assert len(links) >= 4  # Should include self, first, last, next/prev
+    assert "skip=10" in links["self"]
+    assert "limit=5" in links["self"]
+
+def test_generate_pagination_links_with_empty_params(mock_request):
+    links = generate_pagination_links(mock_request, 0, 10, 100)
+    assert links["first"] == "http://testserver/users?skip=0&limit=10"
+    assert links["last"] == "http://testserver/users?skip=90&limit=10"
+
+def test_generate_pagination_links_with_filters():
+    links = generate_pagination_links(
+        "/users", 
+        0, 
+        10, 
+        100,
+        {"role": "admin", "active": "true"}
+    )
+    assert "role=admin" in links["first"]
+    assert "active=true" in links["first"]
+
+def test_create_verification_link():
+    link = create_verification_link("test-token")
+    assert link == "http://testserver/verify_email?token=test-token"

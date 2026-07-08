@@ -8,19 +8,11 @@ from logging import getLogger
 logger = getLogger(__name__)
 
 def hash_password(password: str, rounds: int = 12) -> str:
-    """
-    Hashes a password using bcrypt with a specified cost factor.
-    
-    Args:
-        password (str): The plain text password to hash.
-        rounds (int): The cost factor that determines the computational cost of hashing.
-
-    Returns:
-        str: The hashed password.
-
-    Raises:
-        ValueError: If hashing the password fails.
-    """
+    """Hash a password."""
+    if not isinstance(password, str):
+        raise ValueError("Password must be a string")
+    if not password.strip():
+        raise ValueError("Password must be a non-empty string")
     try:
         salt = bcrypt.gensalt(rounds=rounds)
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)

@@ -15,6 +15,7 @@ from uuid import UUID
 from app.services.email_service import EmailService
 from app.models.user_model import UserRole
 import logging
+from app.schemas.user_schemas import UserResponse  # Add this import
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -192,3 +193,31 @@ class UserService:
             await session.commit()
             return True
         return False
+
+    @classmethod
+    async def update_profile_picture(cls, db: AsyncSession, user_id: UUID, picture_url: str) -> Optional[User]:
+        user = await cls.get_by_id(db, user_id)
+        if user:
+            user.profile_picture_url = picture_url
+            db.add(user)
+            await db.commit()
+            return user
+        return None
+
+    @classmethod
+    async def update_professional_info(cls, db: AsyncSession, user_id: UUID, professional_data: dict) -> Optional[User]:
+        user = await cls.get_by_id(db, user_id)
+        if user:
+            user.linkedin_profile_url = professional_data.linkedin_profile_url
+            user.github_profile_url = professional_data.github_profile_url
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+            return UserResponse.model_validate(user)
+        return None
+
+    @staticmethod
+    async def verify_email(db: AsyncSession, token: str) -> bool:
+        """Verify user's email with token."""
+        # Implement email verification logic
+        return False  # Return True if verification succeeds

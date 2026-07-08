@@ -18,6 +18,7 @@ from builtins import range
 from datetime import datetime
 from unittest.mock import patch
 from uuid import uuid4
+import uuid
 
 # Third-party imports
 import pytest
@@ -35,7 +36,7 @@ from app.dependencies import get_db, get_settings
 from app.utils.security import hash_password
 from app.utils.template_manager import TemplateManager
 from app.services.email_service import EmailService
-from app.services.jwt_service import create_access_token
+from app.services.jwt_service import JWTService
 
 fake = Faker()
 
@@ -215,11 +216,13 @@ async def manager_user(db_session: AsyncSession):
 @pytest.fixture
 def user_base_data():
     return {
-        "username": "john_doe_123",
+        "nickname": "john_doe_123",
         "email": "john.doe@example.com",
+        "first_name": "John",
+        "last_name": "Doe",
         "full_name": "John Doe",
         "bio": "I am a software engineer with over 5 years of experience.",
-        "profile_picture_url": "https://example.com/profile_pictures/john_doe.jpg"
+        "profile_picture_url": "https://example.com/profiles/john_doe.jpg"
     }
 
 @pytest.fixture
@@ -241,7 +244,9 @@ def user_create_data(user_base_data):
 def user_update_data():
     return {
         "email": "john.doe.new@example.com",
-        "full_name": "John H. Doe",
+        "nickname": "johndoe123",
+        "first_name": "John",  # Add required fields
+        "last_name": "Doe",
         "bio": "I specialize in backend development with Python and Node.js.",
         "profile_picture_url": "https://example.com/profile_pictures/john_doe_updated.jpg"
     }
@@ -249,15 +254,35 @@ def user_update_data():
 @pytest.fixture
 def user_response_data():
     return {
-        "id": "unique-id-string",
-        "username": "testuser",
+        "id": uuid.uuid4(),
+        "nickname": "testuser",
         "email": "test@example.com",
+        "role": "AUTHENTICATED",
+        "first_name": "John",  # Add required fields
+        "last_name": "Doe",
         "last_login_at": datetime.now(),
         "created_at": datetime.now(),
-        "updated_at": datetime.now(),
-        "links": []
+        "updated_at": datetime.now()
     }
 
 @pytest.fixture
 def login_request_data():
     return {"username": "john_doe_123", "password": "SecurePassword123!"}
+
+import pytest
+from app.services.jwt_service import JWTService
+
+@pytest.fixture
+async def user_token(user):
+    return JWTService.create_access_token({"sub": str(user.id)})
+
+@pytest.fixture
+async def admin_token(admin_user):
+    return JWTService.create_access_token({"sub": str(admin_user.id)})
+
+@pytest.fixture
+async def manager_token(manager_user):
+    return JWTService.create_access_token({
+        "sub": str(manager_user.id),
+        "role": "MANAGER"  # Explicitly set role to MANAGER
+    })

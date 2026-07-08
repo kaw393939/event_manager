@@ -24,9 +24,10 @@ RUN apt-get update \
 # Copy only the requirements, to cache them in Docker layer
 COPY ./requirements.txt /myapp/requirements.txt
 
-# Upgrade pip and install Python dependencies from requirements file
-RUN pip install --upgrade pip \
-    && pip install -r requirements.txt
+# Force reinstall of packages to ensure clean installation
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir jinja2 markdown2
 
 # Add a non-root user and switch to it
 RUN useradd -m myuser

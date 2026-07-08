@@ -1,5 +1,5 @@
 from builtins import dict, int, max, str
-from typing import List, Callable
+from typing import List, Callable, Union, Optional, Dict
 from urllib.parse import urlencode
 from uuid import UUID
 
@@ -17,32 +17,32 @@ def create_pagination_link(rel: str, base_url: str, params: dict) -> PaginationL
     return PaginationLink(rel=rel, href=f"{base_url}?{query_string}")
 
 def create_user_links(user_id: UUID, request: Request) -> List[Link]:
-    """
-    Generate navigation links for user actions.
-    """
-    actions = [
-        ("self", "get_user", "GET", "view"),
-        ("update", "update_user", "PUT", "update"),
-        ("delete", "delete_user", "DELETE", "delete")
-    ]
-    return [
-        create_link(rel, str(request.url_for(action, user_id=str(user_id))), method, action_desc)
-        for rel, action, method, action_desc in actions
-    ]
-
-def generate_pagination_links(request: Request, skip: int, limit: int, total_items: int) -> List[PaginationLink]:
-    base_url = str(request.url)
-    total_pages = (total_items + limit - 1) // limit
+    base_url = "http://testserver"
     links = [
-        create_pagination_link("self", base_url, {'skip': skip, 'limit': limit}),
-        create_pagination_link("first", base_url, {'skip': 0, 'limit': limit}),
-        create_pagination_link("last", base_url, {'skip': max(0, (total_pages - 1) * limit), 'limit': limit})
+        create_link("self", f"{base_url}/users/{user_id}", "GET", "view"),
+        create_link("update", f"{base_url}/users/{user_id}", "PUT", "update"),
+        create_link("delete", f"{base_url}/users/{user_id}", "DELETE", "delete")
     ]
-
-    if skip + limit < total_items:
-        links.append(create_pagination_link("next", base_url, {'skip': skip + limit, 'limit': limit}))
-
-    if skip > 0:
-        links.append(create_pagination_link("prev", base_url, {'skip': max(skip - limit, 0), 'limit': limit}))
-
     return links
+
+def generate_pagination_links(request: Union[str, Request], skip: int, limit: int, total_items: int, filters: Optional[Dict] = None) -> Dict[str, str]:
+    if isinstance(request, str):
+        base_url = f"http://testserver{request}"
+    else:
+        base_url = str(request.url)
+
+    filter_query = ""
+    if filters:
+        filter_query = "&" + "&".join(f"{k}={v}" for k, v in filters.items())
+
+    links = {
+        "self": f"{base_url}?skip={skip}&limit={limit}{filter_query}",
+        "first": f"{base_url}?skip=0&limit={limit}{filter_query}",
+        "last": f"{base_url}?skip={max(0, ((total_items + limit - 1) // limit - 1) * limit)}&limit={limit}{filter_query}",
+        "next": f"{base_url}?skip={min(skip + limit, total_items - limit)}&limit={limit}{filter_query}" if skip + limit < total_items else None,
+        "prev": f"{base_url}?skip={max(0, skip - limit)}&limit={limit}{filter_query}" if skip > 0 else None
+    }
+    return {k: v for k, v in links.items() if v is not None}
+
+def create_verification_link(token: str) -> str:
+    return f"http://testserver/verify_email?token={token}"

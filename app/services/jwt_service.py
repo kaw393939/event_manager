@@ -1,22 +1,42 @@
-# app/services/jwt_service.py
-from builtins import dict, str
-import jwt
 from datetime import datetime, timedelta
-from settings.config import settings
+from typing import Optional
+from jose import JWTError, jwt
+from fastapi import HTTPException, status
 
-def create_access_token(*, data: dict, expires_delta: timedelta = None):
-    to_encode = data.copy()
-    # Convert role to uppercase before encoding the JWT
-    if 'role' in to_encode:
-        to_encode['role'] = to_encode['role'].upper()
-    expire = datetime.utcnow() + (expires_delta if expires_delta else timedelta(minutes=settings.access_token_expire_minutes))
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
-    return encoded_jwt
+class JWTService:
+    @staticmethod
+    def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+        from app.dependencies import get_settings
+        settings = get_settings()
+        
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.utcnow() + expires_delta
+        else:
+            expire = datetime.utcnow() + timedelta(minutes=settings.access_token_expire_minutes)
+        to_encode.update({"exp": expire})
+        # Add role if not present
+        if "role" not in to_encode:
+            to_encode["role"] = "AUTHENTICATED"
+        encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+        return encoded_jwt
 
-def decode_token(token: str):
-    try:
-        decoded = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
-        return decoded
-    except jwt.PyJWTError:
-        return None
+    @staticmethod
+    def verify_token(token: str) -> dict:
+        from app.dependencies import get_settings
+        settings = get_settings()
+        
+        try:
+            payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+            return payload
+        except JWTError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+    @staticmethod
+    def decode_token(token: str) -> dict:
+        """Alias for verify_token to maintain backwards compatibility"""
+        return JWTService.verify_token(token)

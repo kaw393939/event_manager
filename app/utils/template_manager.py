@@ -1,17 +1,28 @@
+from jinja2 import Environment, FileSystemLoader
+import os
 import markdown2
 from pathlib import Path
 
 class TemplateManager:
     def __init__(self):
+        self.template_dir = os.path.join(os.path.dirname(__file__), '../templates')
+        self.env = Environment(
+            loader=FileSystemLoader(self.template_dir),
+            autoescape=True
+        )
         # Dynamically determine the root path of the project
         self.root_dir = Path(__file__).resolve().parent.parent.parent  # Adjust this depending on the structure
-        self.templates_dir = self.root_dir / 'email_templates'
+        self.templates_dir = self.root_dir / 'templates'  # Changed from 'email_templates'
+        self.templates_dir.mkdir(parents=True, exist_ok=True)
+        # Create default templates if they don't exist
+        self._create_default_templates()
 
-    def _read_template(self, filename: str) -> str:
-        """Private method to read template content."""
-        template_path = self.templates_dir / filename
-        with open(template_path, 'r', encoding='utf-8') as file:
-            return file.read()
+    def _read_template(self, template_name: str) -> str:
+        try:
+            template = self.env.get_template(template_name)
+            return template.render()
+        except Exception as e:
+            raise ValueError(f"Failed to read template: {str(e)}")
 
     def _apply_email_styles(self, html: str) -> str:
         """Apply advanced CSS styles inline for email compatibility with excellent typography."""
@@ -32,6 +43,18 @@ class TemplateManager:
                 styled_html = styled_html.replace(f'<{tag}>', f'<{tag} style="{style}">')
         return styled_html
 
+    def _create_default_templates(self):
+        templates = {
+            'email_verification.md': '# Welcome {{name}}\nPlease verify your email at: {{verification_url}}',
+            'header.md': '# Header',
+            'footer.md': '---\nFooter'
+        }
+        for name, content in templates.items():
+            path = self.templates_dir / name
+            if not path.exists():
+                with open(path, 'w', encoding='utf-8') as f:
+                    f.write(content)
+
     def render_template(self, template_name: str, **context) -> str:
         """Render a markdown template with given context, applying advanced email styles."""
         header = self._read_template('header.md')
@@ -44,3 +67,8 @@ class TemplateManager:
         full_markdown = f"{header}\n{main_content}\n{footer}"
         html_content = markdown2.markdown(full_markdown)
         return self._apply_email_styles(html_content)
+
+    def render_email_template(self, template_type: str, context: dict) -> str:
+        template_name = f"{template_type}.html"
+        template = self.env.get_template(template_name)
+        return template.render(**context)

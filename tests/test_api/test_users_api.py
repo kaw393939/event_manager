@@ -1,11 +1,12 @@
 from builtins import str
+from fastapi import status
 import pytest
 from httpx import AsyncClient
 from app.main import app
-from app.models.user_model import User
+from app.models.user_model import User, UserRole
 from app.utils.nickname_gen import generate_nickname
 from app.utils.security import hash_password
-from app.services.jwt_service import decode_token  # Import your FastAPI app
+from app.services.jwt_service import JWTService  # Update import
 
 # Example of a test function using the async_client fixture
 @pytest.mark.asyncio
@@ -66,6 +67,7 @@ async def test_create_user_duplicate_email(async_client, verified_user):
     user_data = {
         "email": verified_user.email,
         "password": "AnotherPassword123!",
+        "nickname": generate_nickname()  # Add required nickname field
     }
     response = await async_client.post("/register/", json=user_data)
     assert response.status_code == 400
@@ -81,7 +83,7 @@ async def test_create_user_invalid_email(async_client):
     assert response.status_code == 422
 
 import pytest
-from app.services.jwt_service import decode_token
+from app.services.jwt_service import JWTService  # Update import
 from urllib.parse import urlencode
 
 @pytest.mark.asyncio
@@ -100,7 +102,7 @@ async def test_login_success(async_client, verified_user):
     assert data["token_type"] == "bearer"
 
     # Use the decode_token method from jwt_service to decode the JWT
-    decoded_token = decode_token(data["access_token"])
+    decoded_token = JWTService.decode_token(data["access_token"])
     assert decoded_token is not None, "Failed to decode token"
     assert decoded_token["role"] == "AUTHENTICATED", "The user role should be AUTHENTICATED"
 
@@ -189,3 +191,46 @@ async def test_list_users_unauthorized(async_client, user_token):
         headers={"Authorization": f"Bearer {user_token}"}
     )
     assert response.status_code == 403  # Forbidden, as expected for regular user
+
+@pytest.fixture
+async def user_token(user):
+    return JWTService.create_access_token({
+        "sub": str(user.id),
+        "role": "AUTHENTICATED"
+    })
+
+@pytest.fixture
+async def admin_token(admin_user):
+    return JWTService.create_access_token({
+        "sub": str(admin_user.id),
+        "role": "ADMIN"
+    })
+
+@pytest.mark.asyncio
+async def test_update_user_profile_picture(async_client, user, user_token):  # Changed client to async_client
+    response = await async_client.patch(
+        f"/users/{user.id}/profile-picture",  # Changed test_user to user
+        headers={"Authorization": f"Bearer {user_token}"},  # Changed test_user_token to user_token
+        json={"profile_picture_url": "https://example.com/pic.jpg"}
+    )
+    assert response.status_code == 200
+    assert response.json()["profile_picture_url"] == "https://example.com/pic.jpg"
+
+@pytest.mark.asyncio
+async def test_update_user_professional_info(async_client, user, user_token):
+    response = await async_client.patch(
+        f"/users/{user.id}/professional",
+        headers={"Authorization": f"Bearer {user_token}"},
+        json={
+            "linkedin_url": "https://linkedin.com/in/testuser",
+            "github_url": "https://github.com/testuser"
+        }
+    )
+    assert response.status_code == 200
+    assert response.json()["linkedin_url"] == "https://linkedin.com/in/testuser"
+    assert response.json()["github_url"] == "https://github.com/testuser"
+
+@pytest.mark.asyncio
+async def test_verify_email_invalid_token(async_client):
+    response = await async_client.post("/users/verify-email/invalid-token")
+    assert response.status_code == 400

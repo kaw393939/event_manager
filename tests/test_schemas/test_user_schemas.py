@@ -31,7 +31,7 @@ def test_user_response_valid(user_response_data):
 # Tests for LoginRequest
 def test_login_request_valid(login_request_data):
     login = LoginRequest(**login_request_data)
-    assert login.email == login_request_data["email"]
+    assert login.username == login_request_data["username"]
     assert login.password == login_request_data["password"]
 
 # Parametrized tests for nickname and email validation

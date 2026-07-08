@@ -1,17 +1,13 @@
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, AnyUrl, ConfigDict, field_validator
 
 class Link(BaseModel):
-    rel: str = Field(..., description="Relation type of the link.")
-    href: HttpUrl = Field(..., description="The URL of the link.")
-    action: str = Field(..., description="HTTP method for the action this link represents.")
-    type: str = Field(default="application/json", description="Content type of the response for this link.")
+    model_config = ConfigDict(from_attributes=True)
+    rel: str
+    href: str  # Allow any URL format
+    method: str = "GET"
+    action: str | None = None
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "rel": "self",
-                "href": "https://api.example.com/qr/123",
-                "action": "GET",
-                "type": "application/json"
-            }
-        }
+class PaginationLink(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    rel: str
+    href: str  # Allow relative URLs

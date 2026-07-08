@@ -1,6 +1,7 @@
 from builtins import range
 import pytest
 from sqlalchemy import select
+from unittest.mock import AsyncMock
 from app.dependencies import get_settings
 from app.models.user_model import User
 from app.services.user_service import UserService
@@ -9,13 +10,19 @@ pytestmark = pytest.mark.asyncio
 
 # Test creating a user with valid data
 async def test_create_user_with_valid_data(db_session, email_service):
+    # Mock the send_verification_email method
+    email_service.send_verification_email = AsyncMock()
+    
     user_data = {
         "email": "valid_user@example.com",
         "password": "ValidPassword123!",
+        "nickname": "valid_user"
     }
     user = await UserService.create(db_session, user_data, email_service)
     assert user is not None
     assert user.email == user_data["email"]
+    # Verify the mock was called
+    email_service.send_verification_email.assert_called_once()
 
 # Test creating a user with invalid data
 async def test_create_user_with_invalid_data(db_session, email_service):
@@ -91,13 +98,19 @@ async def test_list_users_with_pagination(db_session, users_with_same_role_50_us
 
 # Test registering a user with valid data
 async def test_register_user_with_valid_data(db_session, email_service):
+    # Mock the send_verification_email method
+    email_service.send_verification_email = AsyncMock()
+    
     user_data = {
         "email": "register_valid_user@example.com",
         "password": "RegisterValid123!",
+        "nickname": "register_user"
     }
     user = await UserService.register_user(db_session, user_data, email_service)
     assert user is not None
     assert user.email == user_data["email"]
+    # Verify the mock was called
+    email_service.send_verification_email.assert_called_once()
 
 # Test attempting to register a user with invalid data
 async def test_register_user_with_invalid_data(db_session, email_service):
