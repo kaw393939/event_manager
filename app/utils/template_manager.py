@@ -1,20 +1,28 @@
 import markdown2
 from pathlib import Path
+import logging
 
 class TemplateManager:
     def __init__(self):
-        # Dynamically determine the root path of the project
-        self.root_dir = Path(__file__).resolve().parent.parent.parent  # Adjust this depending on the structure
+        """Initialize TemplateManager with project path configuration."""
+        self.root_dir = Path(__file__).resolve().parent.parent.parent  # Adjust this based on project structure
         self.templates_dir = self.root_dir / 'email_templates'
 
     def _read_template(self, filename: str) -> str:
-        """Private method to read template content."""
+        """Private method to read the content of a template file."""
         template_path = self.templates_dir / filename
-        with open(template_path, 'r', encoding='utf-8') as file:
-            return file.read()
+        try:
+            with open(template_path, 'r', encoding='utf-8') as file:
+                return file.read()
+        except FileNotFoundError:
+            logging.error(f"Template file not found: {template_path}")
+            raise ValueError(f"Template file {filename} not found.")
+        except Exception as e:
+            logging.error(f"Error reading template: {e}")
+            raise
 
     def _apply_email_styles(self, html: str) -> str:
-        """Apply advanced CSS styles inline for email compatibility with excellent typography."""
+        """Apply inline CSS styles to the HTML for better email rendering compatibility."""
         styles = {
             'body': 'font-family: Arial, sans-serif; font-size: 16px; color: #333333; background-color: #ffffff; line-height: 1.5;',
             'h1': 'font-size: 24px; color: #333333; font-weight: bold; margin-top: 20px; margin-bottom: 10px;',
@@ -28,12 +36,12 @@ class TemplateManager:
         styled_html = f'<div style="{styles["body"]}">{html}</div>'
         # Apply styles to each HTML element
         for tag, style in styles.items():
-            if tag != 'body':  # Skip the body style since it's already applied to the <div>
+            if tag != 'body':  # Skip the body style
                 styled_html = styled_html.replace(f'<{tag}>', f'<{tag} style="{style}">')
         return styled_html
 
     def render_template(self, template_name: str, **context) -> str:
-        """Render a markdown template with given context, applying advanced email styles."""
+        """Render a markdown template with given context and return styled HTML."""
         header = self._read_template('header.md')
         footer = self._read_template('footer.md')
 
@@ -44,3 +52,4 @@ class TemplateManager:
         full_markdown = f"{header}\n{main_content}\n{footer}"
         html_content = markdown2.markdown(full_markdown)
         return self._apply_email_styles(html_content)
+    
