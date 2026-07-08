@@ -123,8 +123,8 @@ async def test_login_user_incorrect_email(db_session):
     assert user is None
 
 # Test user login with incorrect password
-async def test_login_user_incorrect_password(db_session, user):
-    user = await UserService.login_user(db_session, user.email, "IncorrectPassword!")
+async def test_login_user_incorrect_password(db_session, verified_user):
+    user = await UserService.login_user(db_session, verified_user.email, "IncorrectPassword!")
     assert user is None
 
 # Test account lock after maximum failed login attempts
