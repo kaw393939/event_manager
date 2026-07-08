@@ -24,21 +24,33 @@ def validate_url(url: Optional[str]) -> Optional[str]:
 
 class UserBase(BaseModel):
     email: EmailStr = Field(..., example="john.doe@example.com")
-    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())
+    nickname: Optional[str] = Field(None, min_length=3, example=generate_nickname())
     first_name: Optional[str] = Field(None, example="John")
     last_name: Optional[str] = Field(None, example="Doe")
     bio: Optional[str] = Field(None, example="Experienced software developer specializing in web applications.")
     profile_picture_url: Optional[str] = Field(None, example="https://example.com/profiles/john.jpg")
-    linkedin_profile_url: Optional[str] =Field(None, example="https://linkedin.com/in/johndoe")
+    linkedin_profile_url: Optional[str] = Field(None, example="https://linkedin.com/in/johndoe")
     github_profile_url: Optional[str] = Field(None, example="https://github.com/johndoe")
 
-    _validate_urls = validator('profile_picture_url', 'linkedin_profile_url', 'github_profile_url', pre=True, allow_reuse=True)(validate_url)
- 
+    _validate_urls = validator(
+        'profile_picture_url', 'linkedin_profile_url', 'github_profile_url',
+        pre=True, allow_reuse=True
+    )(validate_url)
+
+    @validator("nickname")
+    def nickname_must_be_valid(cls, v):
+        if v is None:
+            return v  # Optional, so allow None
+        if not re.match(r'^[a-zA-Z0-9_-]+$', v):
+            raise ValueError("Nickname must only contain letters, numbers, underscores, or hyphens.")
+        if len(v) < 3 or len(v) > 20:
+            raise ValueError("Nickname must be between 3 and 20 characters long.")
+        return v
+
     class Config:
         from_attributes = True
 
 class UserCreate(UserBase):
-    email: EmailStr = Field(..., example="john.doe@example.com")
     password: str = Field(..., example="Secure*1234")
 
 class UserUpdate(UserBase):

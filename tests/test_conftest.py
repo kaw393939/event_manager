@@ -17,7 +17,6 @@ async def test_user_creation(db_session, verified_user):
     assert stored_user.email == verified_user.email
     assert verify_password("MySuperPassword$1234", stored_user.hashed_password)
 
-# Apply similar corrections to other test functions
 @pytest.mark.asyncio
 async def test_locked_user(db_session, locked_user):
     result = await db_session.execute(select(User).filter_by(email=locked_user.email))
@@ -62,3 +61,4 @@ async def test_update_professional_status(db_session, verified_user):
     updated_user = result.scalars().first()
     assert updated_user.is_professional
     assert updated_user.professional_status_updated_at is not None
+

@@ -48,21 +48,40 @@ AsyncSessionScoped = scoped_session(AsyncTestingSessionLocal)
 
 @pytest.fixture
 def email_service():
-    # Assuming the TemplateManager does not need any arguments for initialization
     template_manager = TemplateManager()
     email_service = EmailService(template_manager=template_manager)
+
+    # Override the actual email sending method
+    async def mock_send_user_email(*args, **kwargs):
+        return None
+
+    async def mock_send_verification_email(*args, **kwargs):
+        return None
+
+    email_service.send_user_email = mock_send_user_email
+    email_service.send_verification_email = mock_send_verification_email
     return email_service
 
+from app.dependencies import get_email_service  # make sure this is imported
 
-# this is what creates the http client for your api tests
 @pytest.fixture(scope="function")
-async def async_client(db_session):
+async def async_client(db_session, email_service):
     async with AsyncClient(app=app, base_url="http://testserver") as client:
         app.dependency_overrides[get_db] = lambda: db_session
+        app.dependency_overrides[get_email_service] = lambda: email_service  # 👈 add this
         try:
             yield client
         finally:
             app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="function")
+async def db_session(setup_database):
+    async with AsyncSessionScoped() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
 
 @pytest.fixture(scope="session", autouse=True)
 def initialize_database():
@@ -81,14 +100,6 @@ async def setup_database():
         # you can comment out this line during development if you are debugging a single test
          await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
-
-@pytest.fixture(scope="function")
-async def db_session(setup_database):
-    async with AsyncSessionScoped() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
 
 @pytest.fixture(scope="function")
 async def locked_user(db_session):
