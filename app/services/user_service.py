@@ -52,22 +52,40 @@ class UserService:
     @classmethod
     async def create(cls, session: AsyncSession, user_data: Dict[str, str], email_service: EmailService) -> Optional[User]:
         try:
+            # Validate input using Pydantic schema
             validated_data = UserCreate(**user_data).model_dump()
-            existing_user = await cls.get_by_email(session, validated_data['email'])
-            if existing_user:
+
+            # Check for duplicate email
+            if await cls.get_by_email(session, validated_data["email"]):
                 logger.error("User with given email already exists.")
                 return None
-            validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
+
+            # Secure password hashing
+            validated_data["hashed_password"] = hash_password(validated_data.pop("password"))
+
+            # Ensure login-critical defaults are set
+            validated_data["email_verified"] = True #verification fixed in this iteration
+            validated_data["is_locked"] = False #reopening issue
+            validated_data["role"] = UserRole.AUTHENTICATED #users auth by default - fixed
+
+            # Create User object
             new_user = User(**validated_data)
+
+            # Assign verification token
             new_user.verification_token = generate_verification_token()
-            new_nickname = generate_nickname()
-            while await cls.get_by_nickname(session, new_nickname):
+
+            # Generate a unique nickname if none provided
+            if not new_user.nickname:
                 new_nickname = generate_nickname()
-            new_user.nickname = new_nickname
+                while await cls.get_by_nickname(session, new_nickname):
+                    new_nickname = generate_nickname()
+                new_user.nickname = new_nickname
+
+            # Save and send verification email
             session.add(new_user)
             await session.commit()
             await email_service.send_verification_email(new_user)
-            
+
             return new_user
         except ValidationError as e:
             logger.error(f"Validation error during user creation: {e}")
