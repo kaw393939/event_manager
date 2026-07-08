@@ -1,3 +1,5 @@
+# .github/workflows/production.yaml
+
 name: CI/CD Pipeline
 
 on:
@@ -13,7 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.10.12] # Define Python versions here
+        python-version: [3.10.12]
+
     services:
       postgres:
         image: postgres:latest
@@ -24,6 +27,7 @@ jobs:
         ports:
           - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
       
@@ -44,10 +48,34 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          
+
+      - name: Debug Environment Variables
+        run: |
+          echo "SMTP_SERVER: sandbox.smtp.mailtrap.io"
+          echo "SMTP_PORT: 2525"
+          echo "SMTP_USERNAME: ff61a752e2b156"
+          echo "SMTP_PASSWORD: 0d4be6ae1366f9"
+        env:
+          SMTP_SERVER: sandbox.smtp.mailtrap.io
+          SMTP_PORT: 2525
+          SMTP_USERNAME: ff61a752e2b156
+          SMTP_PASSWORD: 0d4be6ae1366f9
+
+      - name: Create .env file
+        run: |
+          echo "smtp_server=sandbox.smtp.mailtrap.io" >> .env
+          echo "smtp_port=2525" >> .env
+          echo "smtp_username=ff61a752e2b156" >> .env
+          echo "smtp_password=0d4be6ae1366f9" >> .env
+        env:
+          SMTP_SERVER: sandbox.smtp.mailtrap.io
+          SMTP_PORT: 2525
+          SMTP_USERNAME: ff61a752e2b156
+          SMTP_PASSWORD: 0d4be6ae1366f9
+
       - name: Run tests with Pytest
         env:
-          DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/myappdb  # Configure the DATABASE_URL environment variable for tests
+          DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/myappdb
         run: pytest
 
   build-and-push-docker:
@@ -70,16 +98,16 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: kaw393939/wis_club_api:${{ github.sha }} # Uses the Git SHA for tagging
-          platforms: linux/amd64,linux/arm64 # Multi-platform support
-          cache-from: type=registry,ref=kaw393939/wis_club_api:cache
+          tags: dyerovi/event_manager_hw10:${{ github.sha }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=registry,ref=dyerovi/event_manager_hw10:cache
           cache-to: type=inline,mode=max
           
       - name: Scan the Docker image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'kaw393939/wis_club_api:${{ github.sha }}'
+          image-ref: 'dyerovi/event_manager_hw10:${{ github.sha }}'
           format: 'table'
-          exit-code: '1' # Fail the job if vulnerabilities are found
+          exit-code: '1'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
