@@ -67,3 +67,28 @@ def test_user_base_invalid_email(user_base_data_invalid):
     
     assert "value is not a valid email address" in str(exc_info.value)
     assert "john.doe.example.com" in str(exc_info.value)
+
+
+def test_user_create_and_login_example_match():
+    user_create_schema = UserCreate.schema()
+    login_schema = LoginRequest.schema()
+    
+    assert user_create_schema['properties']['email']['example'] == login_schema['properties']['email']['example']
+    assert user_create_schema['properties']['password']['example'] == login_schema['properties']['password']['example']
+
+@pytest.mark.parametrize("bad_password", [
+    "short",               # too short
+    "nocapital123!",       # no uppercase
+    "NOLOWERCASE123!",     # no lowercase
+    "NoSpecials123",       # no special character
+    "NoDigits!"            # no digits
+])
+def test_user_create_invalid_passwords(user_base_data, bad_password):
+    data = {**user_base_data, "password": bad_password}
+    with pytest.raises(ValidationError):
+        UserCreate(**data)
+
+def test_user_create_valid_password(user_base_data):
+    data = {**user_base_data, "password": "ValidPass123!"}
+    user = UserCreate(**data)
+    assert user.password == "ValidPass123!"
