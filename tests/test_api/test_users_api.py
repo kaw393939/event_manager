@@ -9,7 +9,8 @@ from app.services.jwt_service import decode_token  # Import your FastAPI app
 
 # Example of a test function using the async_client fixture
 @pytest.mark.asyncio
-async def test_create_user_access_denied(async_client, user_token, email_service):
+async def test_create_user_access_denied(async_client, verified_user, token, email_service):
+    user_token = token(verified_user.email, verified_user.role.value)
     headers = {"Authorization": f"Bearer {user_token}"}
     # Define user data for the test
     user_data = {
@@ -24,27 +25,31 @@ async def test_create_user_access_denied(async_client, user_token, email_service
 
 # You can similarly refactor other test functions to use the async_client fixture
 @pytest.mark.asyncio
-async def test_retrieve_user_access_denied(async_client, verified_user, user_token):
+async def test_retrieve_user_access_denied(async_client, verified_user, token):
+    user_token = token(verified_user.email, verified_user.role.value)
     headers = {"Authorization": f"Bearer {user_token}"}
     response = await async_client.get(f"/users/{verified_user.id}", headers=headers)
     assert response.status_code == 403
 
 @pytest.mark.asyncio
-async def test_retrieve_user_access_allowed(async_client, admin_user, admin_token):
+async def test_retrieve_user_access_allowed(async_client, admin_user, token):
+    admin_token = token(admin_user.email, admin_user.role.value)
     headers = {"Authorization": f"Bearer {admin_token}"}
     response = await async_client.get(f"/users/{admin_user.id}", headers=headers)
     assert response.status_code == 200
     assert response.json()["id"] == str(admin_user.id)
 
 @pytest.mark.asyncio
-async def test_update_user_email_access_denied(async_client, verified_user, user_token):
+async def test_update_user_email_access_denied(async_client, verified_user, token):
+    user_token = token(verified_user.email, verified_user.role.value)
     updated_data = {"email": f"updated_{verified_user.id}@example.com"}
     headers = {"Authorization": f"Bearer {user_token}"}
     response = await async_client.put(f"/users/{verified_user.id}", json=updated_data, headers=headers)
     assert response.status_code == 403
 
 @pytest.mark.asyncio
-async def test_update_user_email_access_allowed(async_client, admin_user, admin_token):
+async def test_update_user_email_access_allowed(async_client, admin_user, token):
+    admin_token = token(admin_user.email, admin_user.role.value)
     updated_data = {"email": f"updated_{admin_user.id}@example.com"}
     headers = {"Authorization": f"Bearer {admin_token}"}
     response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
@@ -53,7 +58,8 @@ async def test_update_user_email_access_allowed(async_client, admin_user, admin_
 
 
 @pytest.mark.asyncio
-async def test_delete_user(async_client, admin_user, admin_token):
+async def test_delete_user(async_client, admin_user, token):
+    admin_token = token(admin_user.email, admin_user.role.value)
     headers = {"Authorization": f"Bearer {admin_token}"}
     delete_response = await async_client.delete(f"/users/{admin_user.id}", headers=headers)
     assert delete_response.status_code == 204
@@ -143,14 +149,16 @@ async def test_login_locked_user(async_client, locked_user):
     assert response.status_code == 400
     assert "Account locked due to too many failed login attempts." in response.json().get("detail", "")
 @pytest.mark.asyncio
-async def test_delete_user_does_not_exist(async_client, admin_token):
+async def test_delete_user_does_not_exist(async_client, admin_user, token):
+    admin_token = token(admin_user.email, admin_user.role.value)
     non_existent_user_id = "00000000-0000-0000-0000-000000000000"  # Valid UUID format
     headers = {"Authorization": f"Bearer {admin_token}"}
     delete_response = await async_client.delete(f"/users/{non_existent_user_id}", headers=headers)
     assert delete_response.status_code == 404
 
 @pytest.mark.asyncio
-async def test_update_user_github(async_client, admin_user, admin_token):
+async def test_update_user_github(async_client, admin_user, token):
+    admin_token = token(admin_user.email, admin_user.role.value)
     updated_data = {"github_profile_url": "http://www.github.com/kaw393939"}
     headers = {"Authorization": f"Bearer {admin_token}"}
     response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
@@ -158,7 +166,8 @@ async def test_update_user_github(async_client, admin_user, admin_token):
     assert response.json()["github_profile_url"] == updated_data["github_profile_url"]
 
 @pytest.mark.asyncio
-async def test_update_user_linkedin(async_client, admin_user, admin_token):
+async def test_update_user_linkedin(async_client, admin_user, token):
+    admin_token = token(admin_user.email, admin_user.role.value)   
     updated_data = {"linkedin_profile_url": "http://www.linkedin.com/kaw393939"}
     headers = {"Authorization": f"Bearer {admin_token}"}
     response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
@@ -166,7 +175,8 @@ async def test_update_user_linkedin(async_client, admin_user, admin_token):
     assert response.json()["linkedin_profile_url"] == updated_data["linkedin_profile_url"]
 
 @pytest.mark.asyncio
-async def test_list_users_as_admin(async_client, admin_token):
+async def test_list_users_as_admin(async_client, admin_user, token):
+    admin_token = token(admin_user.email, admin_user.role.value)
     response = await async_client.get(
         "/users/",
         headers={"Authorization": f"Bearer {admin_token}"}
@@ -175,7 +185,8 @@ async def test_list_users_as_admin(async_client, admin_token):
     assert 'items' in response.json()
 
 @pytest.mark.asyncio
-async def test_list_users_as_manager(async_client, manager_token):
+async def test_list_users_as_manager(async_client, manager_user, token):
+    manager_token = token(manager_user.email, manager_user.role.value)
     response = await async_client.get(
         "/users/",
         headers={"Authorization": f"Bearer {manager_token}"}
@@ -183,7 +194,8 @@ async def test_list_users_as_manager(async_client, manager_token):
     assert response.status_code == 200
 
 @pytest.mark.asyncio
-async def test_list_users_unauthorized(async_client, user_token):
+async def test_list_users_unauthorized(async_client, verified_user, token):
+    user_token = token(verified_user.email, verified_user.role.value)
     response = await async_client.get(
         "/users/",
         headers={"Authorization": f"Bearer {user_token}"}

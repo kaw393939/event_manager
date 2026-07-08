@@ -4,6 +4,7 @@ from settings.config import settings
 from app.utils.smtp_connection import SMTPClient
 from app.utils.template_manager import TemplateManager
 from app.models.user_model import User
+import logging
 
 class EmailService:
     def __init__(self, template_manager: TemplateManager):
@@ -14,6 +15,8 @@ class EmailService:
             password=settings.smtp_password
         )
         self.template_manager = template_manager
+        logging.info(f"server name: {settings.smtp_server}")
+        logging.info(f"server port: {settings.smtp_port}")
 
     async def send_user_email(self, user_data: dict, email_type: str):
         subject_map = {
