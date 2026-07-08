@@ -189,3 +189,65 @@ async def test_list_users_unauthorized(async_client, user_token):
         headers={"Authorization": f"Bearer {user_token}"}
     )
     assert response.status_code == 403  # Forbidden, as expected for regular user
+
+@pytest.mark.asyncio
+async def test_create_user_invalid_nickname(async_client, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    invalid_data = {
+        "email": "test@example.com",
+        "password": "Secure*1234",
+        "nickname": "admin"  # Reserved word
+    }
+    response = await async_client.post("/users/", json=invalid_data, headers=headers)
+    assert response.status_code == 422
+    assert "Nickname cannot be a reserved word" in response.json()["detail"][0]["msg"]
+
+@pytest.mark.asyncio
+async def test_create_user_too_long_nickname(async_client, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    invalid_data = {
+        "email": "test@example.com",
+        "password": "Secure*1234",
+        "nickname": "a" * 51  # Exceeds max length
+    }
+    response = await async_client.post("/users/", json=invalid_data, headers=headers)
+    assert response.status_code == 422
+    assert "String should have at most 50 characters" in response.json()["detail"][0]["msg"]
+
+@pytest.mark.asyncio
+async def test_create_user_weak_password(async_client, admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    invalid_data = {
+        "email": "test@example.com",
+        "password": "weak",  # Too short
+        "nickname": "test_user"
+    }
+    response = await async_client.post("/users/", json=invalid_data, headers=headers)
+    assert response.status_code == 422
+    assert "Password must be at least 8 characters long" in response.json()["detail"][0]["msg"] 
+
+@pytest.mark.asyncio
+async def test_update_user_bio_only(async_client, admin_user, admin_token):
+    updated_data = {"bio": "Updated bio"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["bio"] == "Updated bio"
+    assert response.json()["profile_picture_url"] == admin_user.profile_picture_url
+
+@pytest.mark.asyncio
+async def test_update_user_profile_picture_only(async_client, admin_user, admin_token):
+    updated_data = {"profile_picture_url": "https://example.com/new.jpg"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["profile_picture_url"] == "https://example.com/new.jpg"
+    assert response.json()["bio"] == admin_user.bio
+
+@pytest.mark.asyncio
+async def test_update_user_invalid_url(async_client, admin_user, admin_token):
+    updated_data = {"profile_picture_url": "invalid_url"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 422
+    assert "Invalid URL format" in response.json()["detail"][0]["msg"]
