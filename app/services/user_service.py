@@ -65,9 +65,11 @@ class UserService:
                 new_nickname = generate_nickname()
             new_user.nickname = new_nickname
             session.add(new_user)
-            await session.commit()
-            await email_service.send_verification_email(new_user)
-            
+                # attempt to send—never let an SMTP hiccup block user creation
+            try:
+                 await email_service.send_verification_email(new_user)
+            except Exception as e:
+                 logger.error(f"UserService.create: failed to send verification email: {e!r}")
             return new_user
         except ValidationError as e:
             logger.error(f"Validation error during user creation: {e}")

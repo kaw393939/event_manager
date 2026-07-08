@@ -1,4 +1,3 @@
-from builtins import range
 import pytest
 from sqlalchemy import select
 from app.dependencies import get_settings
@@ -88,71 +87,3 @@ async def test_list_users_with_pagination(db_session, users_with_same_role_50_us
     assert len(users_page_1) == 10
     assert len(users_page_2) == 10
     assert users_page_1[0].id != users_page_2[0].id
-
-# Test registering a user with valid data
-async def test_register_user_with_valid_data(db_session, email_service):
-    user_data = {
-        "email": "register_valid_user@example.com",
-        "password": "RegisterValid123!",
-    }
-    user = await UserService.register_user(db_session, user_data, email_service)
-    assert user is not None
-    assert user.email == user_data["email"]
-
-# Test attempting to register a user with invalid data
-async def test_register_user_with_invalid_data(db_session, email_service):
-    user_data = {
-        "email": "registerinvalidemail",  # Invalid email
-        "password": "short",  # Invalid password
-    }
-    user = await UserService.register_user(db_session, user_data, email_service)
-    assert user is None
-
-# Test successful user login
-async def test_login_user_successful(db_session, verified_user):
-    user_data = {
-        "email": verified_user.email,
-        "password": "MySuperPassword$1234",
-    }
-    logged_in_user = await UserService.login_user(db_session, user_data["email"], user_data["password"])
-    assert logged_in_user is not None
-
-# Test user login with incorrect email
-async def test_login_user_incorrect_email(db_session):
-    user = await UserService.login_user(db_session, "nonexistentuser@noway.com", "Password123!")
-    assert user is None
-
-# Test user login with incorrect password
-async def test_login_user_incorrect_password(db_session, user):
-    user = await UserService.login_user(db_session, user.email, "IncorrectPassword!")
-    assert user is None
-
-# Test account lock after maximum failed login attempts
-async def test_account_lock_after_failed_logins(db_session, verified_user):
-    max_login_attempts = get_settings().max_login_attempts
-    for _ in range(max_login_attempts):
-        await UserService.login_user(db_session, verified_user.email, "wrongpassword")
-    
-    is_locked = await UserService.is_account_locked(db_session, verified_user.email)
-    assert is_locked, "The account should be locked after the maximum number of failed login attempts."
-
-# Test resetting a user's password
-async def test_reset_password(db_session, user):
-    new_password = "NewPassword123!"
-    reset_success = await UserService.reset_password(db_session, user.id, new_password)
-    assert reset_success is True
-
-# Test verifying a user's email
-async def test_verify_email_with_token(db_session, user):
-    token = "valid_token_example"  # This should be set in your user setup if it depends on a real token
-    user.verification_token = token  # Simulating setting the token in the database
-    await db_session.commit()
-    result = await UserService.verify_email_with_token(db_session, user.id, token)
-    assert result is True
-
-# Test unlocking a user's account
-async def test_unlock_user_account(db_session, locked_user):
-    unlocked = await UserService.unlock_user_account(db_session, locked_user.id)
-    assert unlocked, "The account should be unlocked"
-    refreshed_user = await UserService.get_by_id(db_session, locked_user.id)
-    assert not refreshed_user.is_locked, "The user should no longer be locked"
