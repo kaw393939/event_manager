@@ -1,5 +1,6 @@
 from builtins import range
 import pytest
+from unittest.mock import AsyncMock, MagicMock
 from sqlalchemy import select
 from app.dependencies import get_settings
 from app.models.user_model import User
@@ -7,15 +8,29 @@ from app.services.user_service import UserService
 
 pytestmark = pytest.mark.asyncio
 
+@pytest.fixture
+def email_service_mock():
+    mock_email_service = AsyncMock()
+    mock_email_service.send_verification_email = AsyncMock(return_value=None)
+    mock_email_service.smtp_client = MagicMock()
+    return mock_email_service
+
+@pytest.fixture
+def valid_user_data():
+    return {
+        "email": "valid_user@example.com",
+        "password": "ValidPassword123!",
+    }
+
 # Test creating a user with valid data
-async def test_create_user_with_valid_data(db_session, email_service):
+async def test_create_user_with_valid_data(db_session, email_service_mock, valid_user_data):
     user_data = {
         "email": "valid_user@example.com",
         "password": "ValidPassword123!",
     }
-    user = await UserService.create(db_session, user_data, email_service)
-    assert user is not None
-    assert user.email == user_data["email"]
+    user = await UserService.create(db_session, valid_user_data, email_service_mock)
+    assert user is not None, "User creation failed; user should not be None"
+    assert user.email == user_data["email"], f"Expected email {user_data['email']} but got {user.email}"
 
 # Test creating a user with invalid data
 async def test_create_user_with_invalid_data(db_session, email_service):
@@ -82,20 +97,30 @@ async def test_delete_user_does_not_exist(db_session):
     assert deletion_success is False
 
 # Test listing users with pagination
-async def test_list_users_with_pagination(db_session, users_with_same_role_50_users):
+async def test_list_users_with_pagination(db_session, email_service_mock):
+    for i in range(50):
+        await UserService.create(
+            db_session,
+            {
+                "email": f"user{i}@example.com",
+                "password": "Password123!",
+            },
+            email_service_mock,
+        )
     users_page_1 = await UserService.list_users(db_session, skip=0, limit=10)
     users_page_2 = await UserService.list_users(db_session, skip=10, limit=10)
     assert len(users_page_1) == 10
     assert len(users_page_2) == 10
     assert users_page_1[0].id != users_page_2[0].id
 
+
 # Test registering a user with valid data
-async def test_register_user_with_valid_data(db_session, email_service):
+async def test_register_user_with_valid_data(db_session, email_service_mock):
     user_data = {
         "email": "register_valid_user@example.com",
         "password": "RegisterValid123!",
     }
-    user = await UserService.register_user(db_session, user_data, email_service)
+    user = await UserService.register_user(db_session, user_data, email_service_mock)
     assert user is not None
     assert user.email == user_data["email"]
 
@@ -132,7 +157,7 @@ async def test_account_lock_after_failed_logins(db_session, verified_user):
     max_login_attempts = get_settings().max_login_attempts
     for _ in range(max_login_attempts):
         await UserService.login_user(db_session, verified_user.email, "wrongpassword")
-    
+
     is_locked = await UserService.is_account_locked(db_session, verified_user.email)
     assert is_locked, "The account should be locked after the maximum number of failed login attempts."
 
