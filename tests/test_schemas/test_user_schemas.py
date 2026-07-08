@@ -1,8 +1,50 @@
 from builtins import str
+
 import pytest
 from pydantic import ValidationError
 from datetime import datetime
 from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest
+from uuid import UUID
+
+@pytest.fixture
+def user_base_data():
+    return {
+        "nickname": "test_user",
+        "email": "test_user@example.com",
+        "profile_picture_url": "http://example.com/profile.jpg",
+    }
+
+@pytest.fixture
+def user_create_data():
+    return {
+        "nickname": "new_user",
+        "email": "new_user@example.com",
+        "password": "securepassword",
+    }
+
+@pytest.fixture
+def user_update_data():
+    return {
+        "email": "updated_user@example.com",
+        "first_name": "UpdatedName",
+    }
+
+@pytest.fixture
+def user_response_data():
+    return {
+        "id": UUID('550e8400-e29b-41d4-a716-446655440000'),
+        "nickname": "test_user",
+        "email": "test_user@example.com",
+        "profile_picture_url": "http://example.com/profile.jpg",
+        "last_login_at": "2024-12-02T10:00:00Z",
+    }
+
+@pytest.fixture
+def login_request_data():
+    return {
+        "email": "test_user@example.com",
+        "password": "securepassword",
+    }    
 
 # Tests for UserBase
 def test_user_base_valid(user_base_data):
